@@ -1,0 +1,13 @@
+﻿node_modules/
+.astro/
+dist/
+
+.env
+.env.*
+!.env.example
+dev-server.log
+.playwright-mcp/
+.firecrawl/
+test-artifacts/
+reports/
+relatorio-seo-karol-massagista-2026-10-07.md

@@ -1,0 +1,17 @@
+{
+  "name": "karolmassagista-astro",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "node scripts/generate-redirects.mjs && astro build",
+    "preview": "astro preview",
+    "validate:seo": "node scripts/validate-site.mjs",
+    "test:seo": "node scripts/test-seo-fixes.mjs"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.2",
+    "astro": "^5.7.0"
+  }
+}

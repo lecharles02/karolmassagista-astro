@@ -1,0 +1,1730 @@
+﻿---
+import fs from "node:fs";
+import path from "node:path";
+import { refinePresentation } from "../lib/home-presentation";
+import { additionalServices } from "../lib/additional-services";
+import { serviceIcon } from "../lib/service-icons";
+import { applyTechnicalSeo } from "../lib/technical-seo";
+import { refineEditorialPresentation } from "../lib/editorial-presentation";
+
+interface Props {
+  filePath: string;
+}
+
+const { filePath } = Astro.props;
+const absolutePath = path.resolve(process.cwd(), filePath);
+let sourceHtml = fs.readFileSync(absolutePath, "utf-8");
+sourceHtml = repairLegacyEncoding(sourceHtml);
+
+const routePath = Astro.url.pathname.endsWith("/") ? Astro.url.pathname : `${Astro.url.pathname}/`;
+
+function toRoutePath(file: string) {
+  const normalized = file.replaceAll("\\", "/");
+  return normalized
+    .replace(/^src\/legacy-html/, "")
+    .replace(/\/index\.html$/, "/") || "/";
+}
+
+function repairLegacyEncoding(html: string) {
+  let output = html.replace(/^(?:\uFEFF|\uFFFD|ï¿½)+/, "");
+
+  const replacements: Array<[string, string]> = [
+    ["Ã¡", "á"],
+    ["Ã ", "à"],
+    ["Ã¢", "â"],
+    ["Ã£", "ã"],
+    ["Ã¤", "ä"],
+    ["Ã©", "é"],
+    ["Ã¨", "è"],
+    ["Ãª", "ê"],
+    ["Ã­", "í"],
+    ["Ã³", "ó"],
+    ["Ã´", "ô"],
+    ["Ãµ", "õ"],
+    ["Ãº", "ú"],
+    ["Ã¼", "ü"],
+    ["Ã§", "ç"],
+    ["Ã‘", "Ñ"],
+    ["Ã±", "ñ"],
+    ["Ã‰", "É"],
+    ["Ã“", "Ó"],
+    ["Ãš", "Ú"],
+    ["Ã€", "À"],
+    ["Ã‚", "Â"],
+    ["Ãƒ", "Ã"],
+    ["â€”", "—"],
+    ["â€“", "–"],
+    ["â€•", "‒"],
+    ["â€˜", "‘"],
+    ["â€™", "’"],
+    ["â€œ", "“"],
+    ["â€", "”"],
+    ["â€¢", "•"],
+    ["â€¦", "…"],
+    ["â‚¬", "€"],
+    ["â¬¢", "•"],
+    ["�0 tudo com sigilo mesmo?", "É tudo com sigilo mesmo?"],
+    ["�0 tudo com sigilo mesmo Ninguém vai saber?", "É tudo com sigilo mesmo? Ninguém vai saber?"],
+    ["Onde é o atendimento �0 seguro?", "Onde é o atendimento? É seguro?"],
+    ["�0 cobrança, rotina, silêncio.", "Sem cobrança, rotina, silêncio."],
+    ["�0 toque total - sem distração, sem roupa, sem mente.", "É toque total - sem distração, sem roupa, sem mente."],
+    ["�0 pra desligar da rotina e entrar num estado que só o corpo entende.", "É pra desligar da rotina e entrar num estado que só o corpo entende."],
+    ["�0 prazer puro, no tempo certo.", "É prazer puro, no tempo certo."],
+    ["�0 pra quem quer esquecer tudo e se entregar por inteiro.", "É pra quem quer esquecer tudo e se entregar por inteiro."],
+    ["�0 o seu momento de paz, com a garantia de que tudo o que acontece aqui, morre aqui.", "É o seu momento de paz, com a garantia de que tudo o que acontece aqui, morre aqui."],
+    ["�0 porque seu corpo tá pedindo o que sua rotina não permite.", "É porque seu corpo tá pedindo o que sua rotina não permite."],
+    ["CONHE�!A", "CONHEÇA"],
+    ["REF�aGIO", "REFÚGIO"],
+    ["ESPA�!O", "ESPAÇO"],
+    ["SERVI�!OS", "SERVIÇOS"],
+    ["LOCALIZA�!ÒO", "LOCALIZAÇÃO"],
+    ["VOC�`", "VOCÊ"],
+    ["In�cio", "Início"],
+    ["Servi�os", "Serviços"],
+    ["Espa�o", "Espaço"],
+    ["D�vidas", "Dúvidas"],
+    ["Hor�rio", "Horário"],
+    ["HOR�RIO", "HORÁRIO"],
+    ["HOR?RIO", "HORÁRIO"],
+    ["S�bado", "Sábado"],
+    ["S?bado", "Sábado"],
+    ["Cambu�", "Cambuí"],
+    ["cambo�", "cambuí"],
+    ["Campinas Cambu -", "Campinas Cambuí -"],
+    ["Regi�o", "Região"],
+    ["Hortol�ndia", "Hortolândia"],
+    ["Sumar�", "Sumaré"],
+    ["Cart�o", "Cartão"],
+    ["T�ntrica", "Tântrica"],
+    ["T�ntrico", "Tântrico"],
+    ["T�ntricas", "Tântricas"],
+    ["Massagem T�ntrica", "Massagem Tântrica"],
+    ["massagem t�ntrica", "massagem tântrica"],
+    ["N�o", "Não"],
+    ["n�o", "não"],
+    ["Voc�", "Você"],
+    ["voc�", "você"],
+    ["S�", "Só"],
+    ["s�", "só"],
+    ["at�", "até"],
+    ["ap�s", "após"],
+    ["almo�o", "almoço"],
+    ["manh�", "manhã"],
+    ["pr�prio", "próprio"],
+    ["Pr�prio", "Próprio"],
+    ["pr�xima", "próxima"],
+    ["pr�ximas", "próximas"],
+    ["pr�ximo", "próximo"],
+    ["pr�ximos", "próximos"],
+    ["cora��o", "coração"],
+    ["cora��es", "corações"],
+    ["conex�o", "conexão"],
+    ["comunica��o", "comunicação"],
+    ["reconex�o", "reconexão"],
+    ["experi�ncia", "experiência"],
+    ["sess�o", "sessão"],
+    ["sess�es", "sessões"],
+    ["discri��o", "discrição"],
+    ["Discre��o", "Discrição"],
+    ["descri��o", "descrição"],
+    ["trai��o", "traição"],
+    ["Trai��o", "Traição"],
+    ["benef�cios", "benefícios"],
+    ["Benef�cios", "Benefícios"],
+    ["confirma��o", "confirmação"],
+    ["cobran�as", "cobranças"],
+    ["press�es", "pressões"],
+    ["exposi��o", "exposição"],
+    ["recep��o", "recepção"],
+    ["japon�s", "japonês"],
+    ["respira��o", "respiração"],
+    ["autom�tico", "automático"],
+    ["pe�o", "peço"],
+    ["porqu�", "porquê"],
+    ["fam�lia", "família"],
+    ["ningu�m", "ninguém"],
+    ["v�lvula", "válvula"],
+    ["endere�o", "endereço"],
+    ["Sess�o", "Sessão"],
+    ["sess�o", "sessão"],
+    ["sess�es", "sessões"],
+    ["hor�rios", "horários"],
+    ["hor�rio", "horário"],
+    ["dias �teis", "dias úteis"],
+    ["v?deos", "vídeos"],
+    ["Conhe?a", "Conheça"],
+    ["conhe?a", "conheça"],
+    ["espa?o", "espaço"],
+    ["Espa?o", "Espaço"],
+    ["Cambu?", "Cambuí"],
+    ["T?ntrica", "Tântrica"],
+    ["T?ntrico", "Tântrico"],
+    ["t?ntrica", "tântrica"],
+    ["t?ntrico", "tântrico"],
+    ["Regi?o", "Região"],
+    ["regi?o", "região"],
+    ["Sumar?", "Sumaré"],
+    ["Hortol?ndia", "Hortolândia"],
+    ["Cart?o", "Cartão"],
+    ["Servi?os", "Serviços"],
+    ["servi?os", "serviços"],
+    ["Sess?o", "Sessão"],
+    ["sess?o", "sessão"],
+    ["M?os", "Mãos"],
+    ["m?os", "mãos"],
+    ["In?cio", "Início"],
+    ["Inicie sua jornada", "Inicie sua jornada"],
+    ["viv?ncias", "vivências"],
+    ["experi?ncia", "experiência"],
+    ["japon?s", "japonês"],
+    ["respira?o", "respiração"],
+    ["descri?o", "descrição"],
+    ["profissionalismo", "profissionalismo"],
+    ["Leo Charles", "Charles"],
+    ["autoconhecimento", "autoconhecimento"],
+    ["autocuidado", "autocuidado"],
+    ["palpita��o", "palpitação"],
+    ["avalia��o", "avaliação"],
+    ["t�cnica", "técnica"],
+    ["t�cnicas", "técnicas"],
+    ["t�cnico", "técnico"],
+    ["pr�ximo", "próximo"],
+    ["pr�pria", "própria"],
+    ["pr�prias", "próprias"],
+    ["pr�prios", "próprios"],
+    ["n�mero", "número"],
+    ["n�meros", "números"],
+    ["rotina �", "rotina -"],
+    ["��&", "★"],
+    ["�&", "★"],
+    ["aqui�", "aqui…"],
+  ];
+
+  for (const [from, to] of replacements) {
+    output = output.replaceAll(from, to);
+  }
+
+  const portugueseWords = [
+    "Além", "altíssima", "alívio", "antecedência", "atenção", "ativação", "Através",
+    "autêntico", "autodomínio", "Automático", "Auxílio", "Avaliações", "Avaliação",
+    "avança", "avançadas", "bancário", "Bastão", "benéfico", "biológica", "braços",
+    "café", "cafés", "cambuí", "característica", "Características", "Cenário", "centímetro",
+    "Ciência", "circulação", "clímax", "Clássica", "começa", "começar", "começo",
+    "certificações", "Certificação", "Comparação", "Comunicação", "Conexão", "Confiança",
+    "confortável", "Conheça", "consciência", "CONTEÚDO", "contínuo", "contraindicações", "contrário",
+    "conveniência", "convivência", "couraças", "crônica", "crônicas", "dói",
+    "Dê", "Diferença", "diferenças", "diária", "diário", "Discrição", "disfunções",
+    "distância", "distraído", "drástica", "dúvida", "dúvidas", "econômico", "egoísmo",
+    "ejaculação", "emoções", "Emoção", "energética", "energético", "energéticos",
+    "Domínio", "equilíbrio", "erógenas", "Erótica", "espaço", "essências", "específica", "específicas",
+    "específicos", "especialização", "estará", "estúdio", "estimulação", "estímulo",
+    "estímulos", "está", "estão", "excitação", "Experiência", "Experiências", "explicações",
+    "explicação", "exploração", "fácil", "forçado", "Fáscia", "física", "físicas",
+    "físico", "formação", "genitália", "há", "hipoalergênico", "Histórias", "holística", "hormônio",
+    "HORTOLÂNDIA", "identificação", "iluminação", "impecável", "importância",
+    "inabaláveis", "início", "incomparável", "indescritível", "inesquecível",
+    "inspiração", "Integração", "intenção", "intermediário", "involuntárias", "Já", "Japão", "João",
+    "lá", "lúdica", "óleos", "Liberação", "liberação/alívio", "Localização", "Magalhães",
+    "âmbitos", "médico", "médicos", "meditações", "Meditação", "memorável", "menção",
+    "mágica", "micro-férias", "missão", "Mãos", "movimentação", "música", "Mútua", "máxima",
+    "máximo", "única", "único", "Ninguém", "Número", "nós", "íntimas", "níveis",
+    "nível", "obstruídos", "opções", "opção", "orgástica", "originária", "oásis",
+    "paciência", "padrão", "paixão", "Paulínia", "público", "percepção", "pescoço",
+    "Página", "página", "ápice", "pélvica", "pélvico", "potência", "Praça", "Preparação",
+    "Presença", "prevenção", "previdência", "princípios", "Prostática", "próstata",
+    "prática", "práticas", "prático", "pós", "psicológico", "Pós-Trabalho", "questões",
+    "reações", "reação", "áreas", "Redução", "refeições", "Referência", "refúgio",
+    "Reforçar", "região", "relações", "relação", "renovação", "Respiração", "órgão",
+    "romântica", "rápida", "rápido", "rítmicas", "rítmicos", "saberá", "saída", "Saúde",
+    "sanguíneo", "Sedução", "segurança", "sensações", "sensação", "será", "sério", "serviço", "serviços",
+    "silêncio", "sofisticação", "solução", "Sugestões", "SUMARÉ", "tá", "também", "Técnica",
+    "Técnicas", "Técnico", "úteis", "Tendências", "terapêutica", "terapêutico",
+    "terá", "terapêuticas", "terminação", "ética", "ético", "têm", "tímido", "tântrica", "tântricas",
+    "tântrico", "tântricos", "tão", "trajetória", "três", "urológica", "urológicos", "vivência",
+    "vê", "vêm", "vão", "vulnerável",
+    "atuação", "atualizações", "orientações",
+  ];
+
+  const wordRepairs = new Map<string, string>();
+
+  for (const word of portugueseWords) {
+    const lower = word.toLocaleLowerCase("pt-BR");
+    const variants = new Set([
+      word,
+      lower,
+      word.toLocaleUpperCase("pt-BR"),
+      `${lower.charAt(0).toLocaleUpperCase("pt-BR")}${lower.slice(1)}`,
+    ]);
+
+    for (const variant of variants) {
+      const corrupted = Array.from(variant, (character) =>
+        character.codePointAt(0)! > 127 ? String.fromCharCode(0xfffd) : character
+      ).join("");
+      wordRepairs.set(corrupted, variant);
+
+      const questionMarked = Array.from(variant, (character) =>
+        character.codePointAt(0)! > 127 ? "?" : character
+      ).join("");
+      wordRepairs.set(questionMarked, variant);
+    }
+  }
+
+  for (const [corrupted, repaired] of [...wordRepairs].sort((a, b) => b[0].length - a[0].length)) {
+    output = output.replaceAll(corrupted, repaired);
+  }
+
+  output = output.replaceAll("Ninguém vai saberá", "Ninguém vai saber?");
+
+  output = output
+    .replace(/<span class="mx-2">�<\/span>/g, '<span class="mx-2">•</span>')
+    .replace(/(\d{1,2}h\d{2}) � (\d{1,2}h\d{2})/g, "$1 às $2")
+    .replace(/>� <!-- -->2026/g, ">© <!-- -->2026")
+    .replace(/2026 � Por/g, "2026 — Por")
+    .replace(/relaxa � eu/g, "relaxa — eu")
+    .replace(/termos � e/g, "termos — e")
+    .replace(/prazer sexual � � o/g, "prazer sexual — é o")
+    .replace(/massagem sensual � um/g, "massagem sensual — um")
+    .replace(/liberação rápida � e sim/g, "liberação rápida — e sim")
+    .replace(/profissional � Discrição/g, "profissional • Discrição")
+    .replace(/privativa � Consulte/g, "privativa • Consulte")
+    .replace(/Campinas � Dupla/g, "Campinas | Dupla")
+    .replace(/Valinhos � Experiência/g, "Valinhos | Experiência")
+    .replace(/Hortolândia � Atendimento/g, "Hortolândia | Atendimento")
+    .replace(/Sumaré � Atendimento/g, "Sumaré | Atendimento")
+    .replace(/sessóo/gi, (value) => value[0] === "S" ? "Sessão" : "sessão")
+    .replace(/sessóes/gi, (value) => value[0] === "S" ? "Sessões" : "sessões")
+    .replace(/expansóo/gi, (value) => value[0] === "E" ? "Expansão" : "expansão")
+    .replace(/tensóes/gi, (value) => value[0] === "T" ? "Tensões" : "tensões")
+    .replace(/tensóo/gi, (value) => value[0] === "T" ? "Tensão" : "tensão")
+    .replace(/pressóes/gi, (value) => value[0] === "P" ? "Pressões" : "pressões")
+    .replace(/pressóo/gi, (value) => value[0] === "P" ? "Pressão" : "pressão")
+    .replace(/\bsóo\b/g, "são")
+    .replace(/Afrodisóaco/g, "Afrodisíaco")
+    .replace(/Descompressóo/g, "Descompressão")
+    .replace(/confusóo/g, "confusão")
+    .replace(/imersóo/g, "imersão")
+    .replace(/repressóes/g, "repressões")
+    .replace(/dimensóo/g, "dimensão")
+    .replace(/visóo/g, "visão")
+    .replace(/tántrica/g, "tântrica")
+    .replace(/avalia\?es/gi, (value) => value[0] === "A" ? "Avaliações" : "avaliações")
+    .replace(/certifica\?es/gi, (value) => value[0] === "C" ? "Certificações" : "certificações")
+    .replace(/certifica\?o/gi, (value) => value[0] === "C" ? "Certificação" : "certificação")
+    .replace(/forma\?o/gi, (value) => value[0] === "F" ? "Formação" : "formação")
+    .replace(/discri\?o/gi, (value) => value[0] === "D" ? "Discrição" : "discrição")
+    .replace(/atua\?o/gi, (value) => value[0] === "A" ? "Atuação" : "atuação")
+    .replace(/(?<![\p{L}\p{N}])�(?![\p{L}\p{N}])/gu, "é");
+
+  output = output
+    .replace(/ME CONHE.{1,4}A/g, "ME CONHEÇA")
+    .replace(/SEU REF.{1,4}GIO/g, "SEU REFÚGIO")
+    .replace(/ESPA.{1,4}O/g, "ESPAÇO")
+    .replace(/LOCALIZA.{1,6}O/g, "LOCALIZAÇÃO")
+    .replace(/SERVI.{1,6}OS/g, "SERVIÇOS")
+    .replace(/Horarios/g, "Horários")
+    .replace(/Consultar horarios/g, "Consultar horários")
+    .replace(/Consulte horarios/g, "Consulte horários")
+    .replace(/Agende pelo WhatsApp[^<"]*/g, "Agende pelo WhatsApp")
+    .replace(/Depoimentos[^<"]*/g, "Depoimentos")
+    .replace(/�0 porque seu corpo tá pedindo/g, "É porque seu corpo tá pedindo");
+
+  const contentRepairs: Array<[string, string]> = [
+    ["Acredito que o toque  a linguagem mais antiga da cura. Em meu estúdio no Cambuí, cada detalhe  da temperatura da sala  escolha das essências   pensado para que voc se sinta respeitado, seguro e profundamente acolhido.", "Acredito que o toque é uma das formas mais antigas de cuidado. Em meu estúdio no Cambuí, cada detalhe — da temperatura da sala à escolha das essências — é pensado para que você se sinta respeitado, seguro e acolhido."],
+    ["o hor?rio preferido para receber as orienta?es de agendamento", "o horário preferido para receber as orientações de agendamento"],
+    ["Karol possui formação profissionalá", "Karol possui formação profissional?"],
+    ["Karol possui forma?o profissional?", "Karol possui formação profissional?"],
+    ["Sim, Karol  certificada em massagem tântrica, nuru, lingam e terapias integrativas, com constantes atualiza?es em cursos especializados.", "A formação e as técnicas utilizadas podem ser esclarecidas diretamente antes do agendamento, junto com as dúvidas sobre cada modalidade."],
+    ["relaxamento impossóvel", "relaxamento difícil"],
+    ["A Karol  diferenciada demais. Fui fazer a tântrica no Cambu e sa de l relaxado como nunca. O lugar  limpo e discreto.", "A Karol é diferenciada demais. Fui fazer a tântrica no Cambuí e saí de lá relaxado como nunca. O lugar é limpo e discreto."],
+    ["Vim de Valinhos s pra conhecer a Nuru dela", "Vim de Valinhos só para conhecer a Nuru dela"],
+    ["Ela  muito atenciosa e profissional.", "Ela é muito atenciosa e profissional."],
+    ["Entrei e sa sem ver ninguém.", "Entrei e saí sem ver ninguém."],
+    ["J virei cliente fixo.", "Já virei cliente fixo."],
+    ["a Karol me deixou super  vontade.", "a Karol me deixou super à vontade."],
+    ["Sa de l leve.", "Saí de lá leve."],
+    ["A tântrica dela  fora do sério.  pra quem quer desligar", "A tântrica dela é fora do sério. É para quem quer desligar"],
+    ["Melhor massagem sensual que j recebi na região. A Karol  muito gente boa", "Melhor massagem sensual que já recebi na região. A Karol é muito gente boa"],
+    ["O banho no final  ?timo pra j sair renovado.", "O banho no final é ótimo para sair renovado."],
+    ["Fiz a Nuru ontem e ainda t sentindo o relaxamento. O toque dela  sensacional.", "Fiz a Nuru ontem e ainda estou sentindo o relaxamento. O toque dela é sensacional."],
+  ];
+
+  for (const [from, to] of contentRepairs) {
+    output = output.replaceAll(from, to);
+  }
+
+  if (output.includes("\uFFFD")) {
+    const position = output.indexOf("\uFFFD");
+    const context = output.slice(Math.max(0, position - 60), position + 61).replace(/\s+/g, " ");
+    throw new Error(`Legacy HTML contains unrepaired encoding characters: ${filePath} (${context})`);
+  }
+
+  return output;
+}
+
+const commercialPages: Record<string, {
+  title: string;
+  description: string;
+  serviceName: string;
+  whatsappText: string;
+  faq: { question: string; answer: string }[];
+}> = {
+  "/massagem-sensual-campinas/": {
+    title: "Massagem Sensual e Erótica em Campinas | Cambuí",
+    description: "Massagem sensual e erótica em Campinas, no Cambuí, com atendimento privativo, sigilo e horário marcado. Tire dúvidas e consulte horários pelo WhatsApp.",
+    serviceName: "Massagem Sensual em Campinas",
+    whatsappText: "Olá, Karol. Vim pelo site e gostaria de consultar horários para Massagem Sensual em Campinas.",
+    faq: [
+      {
+        question: "O atendimento é discreto?",
+        answer: "Sim. O atendimento é feito com horário marcado, conversa reservada pelo WhatsApp e ambiente privativo no Cambuí.",
+      },
+      {
+        question: "Posso tirar dúvidas antes de agendar?",
+        answer: "Sim. O primeiro contato pelo WhatsApp pode ser apenas para entender a experiência, horários e valores.",
+      },
+      {
+        question: "Onde fica o atendimento?",
+        answer: "O atendimento acontece em Campinas, na região do Cambuí, com fácil acesso para quem está na cidade e região.",
+      },
+    ],
+  },
+  "/massagem-nuru-campinas/": {
+    title: "Massagem Nuru em Campinas | Experiência no Cambuí",
+    description: "Massagem Nuru em Campinas com gel, ambiente privativo, sigilo e horário marcado no Cambuí. Consulte horários disponíveis diretamente pelo WhatsApp.",
+    serviceName: "Massagem Nuru em Campinas",
+    whatsappText: "Olá, Karol. Vim pelo site e gostaria de consultar horários para Massagem Nuru em Campinas.",
+    faq: [
+      {
+        question: "Como funciona a Massagem Nuru?",
+        answer: "A Massagem Nuru usa gel específico e movimentos de deslizamento corporal em uma experiência sensorial conduzida com cuidado e privacidade.",
+      },
+      {
+        question: "Preciso escolher a sessão antes de chamar?",
+        answer: "Não. Você pode chamar no WhatsApp para tirar dúvidas e entender qual experiência combina melhor com o que procura.",
+      },
+      {
+        question: "O atendimento é no Cambuí?",
+        answer: "Sim. O atendimento é realizado em Campinas, na região do Cambuí, em ambiente reservado.",
+      },
+    ],
+  },
+  "/massagem-tantrica-campinas/": {
+    title: "Massagem Tântrica em Campinas | Karol no Cambuí",
+    description: "Massagem tântrica em Campinas com toque consciente, ambiente privativo, sigilo e atendimento no Cambuí. Consulte os horários pelo WhatsApp.",
+    serviceName: "Massagem Tântrica em Campinas",
+    whatsappText: "Olá, Karol. Vim pelo site e gostaria de consultar horários para Massagem Tântrica em Campinas.",
+    faq: [
+      {
+        question: "A Massagem Tântrica é indicada para a primeira experiência?",
+        answer: "Sim. A sessão pode ser conduzida com explicação inicial, ritmo respeitoso e espaço para dúvidas antes do agendamento.",
+      },
+      {
+        question: "O atendimento tem sigilo?",
+        answer: "Sim. O contato, o agendamento e a experiência são tratados com discrição e privacidade.",
+      },
+      {
+        question: "Como consulto horários?",
+        answer: "O caminho mais rápido é chamar pelo WhatsApp e informar que veio pelo site para consultar disponibilidade.",
+      },
+    ],
+  },
+  "/massagem-lingam-campinas/": {
+    title: "Massagem Lingam em Campinas | Atendimento no Cambuí",
+    description: "Massagem Lingam em Campinas para bem-estar masculino, com ambiente privativo, sigilo e atendimento no Cambuí. Consulte os horários pelo WhatsApp.",
+    serviceName: "Massagem Lingam em Campinas",
+    whatsappText: "Olá, Karol. Vim pelo site e gostaria de consultar horários para Massagem Lingam em Campinas.",
+    faq: [
+      {
+        question: "A Massagem Lingam é voltada para homens?",
+        answer: "Sim. A experiência trabalha bem-estar masculino, sensibilidade corporal e autoconhecimento em um ambiente reservado.",
+      },
+      {
+        question: "Posso conversar antes para entender melhor?",
+        answer: "Sim. O WhatsApp pode ser usado para tirar dúvidas antes de decidir pelo agendamento.",
+      },
+      {
+        question: "O atendimento é profissional?",
+        answer: "Sim. A sessão é conduzida com horário marcado, cuidado, discrição e orientação clara.",
+      },
+    ],
+  },
+  "/massagem-4-maos-campinas/": {
+    title: "Massagem 4 Mãos em Campinas | Experiência no Cambuí",
+    description: "Massagem 4 mãos em Campinas com duas profissionais, sincronia, sigilo e ambiente privativo no Cambuí. Consulte disponibilidade pelo WhatsApp.",
+    serviceName: "Massagem 4 Mãos em Campinas",
+    whatsappText: "Olá, Karol. Vim pelo site e gostaria de consultar horários para Massagem 4 Mãos em Campinas.",
+    faq: [
+      {
+        question: "Como funciona a Massagem 4 mãos?",
+        answer: "A experiência é realizada com duas profissionais em movimentos coordenados, criando uma sessão mais intensa e envolvente.",
+      },
+      {
+        question: "Preciso agendar com antecedência?",
+        answer: "É recomendado consultar disponibilidade pelo WhatsApp, pois a sessão depende de agenda combinada.",
+      },
+      {
+        question: "O atendimento é privativo?",
+        answer: "Sim. O atendimento é feito com horário marcado e em ambiente reservado.",
+      },
+    ],
+  },
+};
+
+const localLandingPages: Record<string, {
+  title: string;
+  description: string;
+  headline: string;
+  intro: string;
+  whatsappText: string;
+}> = {
+  "/massagista-em-campinas/": {
+    title: "Massagista em Campinas | Atendimento Privativo no Cambuí",
+    description: "Massagista em Campinas com atendimento privativo no Cambuí, sigilo, horário marcado e massagens tântrica, Nuru, sensual, Lingam e 4 mãos.",
+    headline: "Massagista em Campinas com atendimento privativo no Cambuí",
+    intro: "Para quem busca uma massagista em Campinas, a escolha envolve mais do que a técnica. É importante saber se o atendimento é discreto, se o ambiente é seguro, se é possível tirar dúvidas antes e qual experiência combina melhor com o momento.",
+    whatsappText: "Olá, Karol. Vim pelo site buscando massagista em Campinas e gostaria de consultar horários disponíveis.",
+  },
+};
+
+const seoOverrides: Record<string, { title: string; description: string }> = {
+  "/": {
+    title: "Massagens em Campinas no Cambuí | Karol Massagista",
+    description: "Massagens tântrica, Nuru, sensual e Lingam em Campinas, no Cambuí, com atendimento privativo, discrição e horário marcado. Consulte pelo WhatsApp.",
+  },
+  "/blog/diferenca-massagem-sensual-erotica/": {
+    title: "Massagem Sensual ou Erótica? Diferenças | Campinas",
+    description: "Entenda as diferenças entre massagem sensual, erótica e tântrica, como cada experiência funciona e o que considerar antes de escolher em Campinas.",
+  },
+  "/blog/guia-massagem-lingam-campinas/": {
+    title: "Massagem Lingam: Guia para Homens em Campinas",
+    description: "Entenda o que é Massagem Lingam, como funciona a experiência, quais cuidados observar e por que ela é procurada por homens em Campinas.",
+  },
+  "/blog/liberacao-miofascial-vs-tantrica/": {
+    title: "Liberação Miofascial ou Massagem Tântrica? | Campinas",
+    description: "Compare liberação miofascial e massagem tântrica, entenda os objetivos de cada abordagem e saiba qual profissional procurar em cada situação.",
+  },
+  "/blog/melhores-spas-vs-atendimento-privado/": {
+    title: "Spa ou Atendimento Privado em Campinas? Veja Diferenças",
+    description: "Compare spa e atendimento privado em Campinas considerando discrição, ambiente, contato profissional e especialização antes de escolher.",
+  },
+  "/blog/yoga-e-tantra-conexao/": {
+    title: "Yoga e Massagem Tântrica: Conexão e Práticas | Campinas",
+    description: "Veja como respiração, presença e práticas leves de yoga podem preparar o corpo e a mente para uma experiência de massagem tântrica.",
+  },
+  "/depoimentos/": {
+    title: "Depoimentos sobre Massagem em Campinas | Karol",
+    description: "Veja depoimentos sobre o atendimento da Karol em Campinas, com relatos sobre discrição, ambiente privativo, cuidado e experiência no Cambuí.",
+  },
+  "/servicos/": {
+    title: "Massagens em Campinas: Tântrica, Nuru e Sensual | Karol",
+    description: "Conheça as massagens tântrica, Nuru, sensual, Lingam e 4 mãos oferecidas pela Karol em Campinas, no Cambuí, com atendimento privativo.",
+  },
+  "/sobre-karol-massagista/": {
+    title: "Karol Massagista em Campinas | Conheça a Profissional",
+    description: "Conheça a Karol, massagista em Campinas com atendimento privativo no Cambuí, experiência em massagens sensoriais, discrição e horário marcado.",
+  },
+  "/massagem-sensual-hortolandia/": {
+    title: "Massagem Sensual para Hortolândia | Atendimento no Cambuí",
+    description: "Massagem sensual para clientes de Hortolândia com atendimento privativo no Cambuí, em Campinas. Consulte horários e tire dúvidas pelo WhatsApp.",
+  },
+  "/massagem-sensual-sumare/": {
+    title: "Massagem Sensual para Sumaré | Atendimento no Cambuí",
+    description: "Massagem sensual para clientes de Sumaré com atendimento privativo no Cambuí, em Campinas. Consulte horários e tire dúvidas diretamente pelo WhatsApp.",
+  },
+  "/massagem-sensual-valinhos/": {
+    title: "Massagem Sensual para Valinhos | Atendimento no Cambuí",
+    description: "Massagem sensual para clientes de Valinhos com atendimento privativo no Cambuí, em Campinas. Consulte horários e tire dúvidas diretamente pelo WhatsApp.",
+  },
+};
+
+const pageMessages: Record<string, string> = {
+  "/": "Olá, Karol. Vim pelo site e gostaria de conhecer as massagens e consultar horários disponíveis.",
+  "/servicos/": "Olá, Karol. Vim pela página de serviços e gostaria de consultar horários disponíveis.",
+  "/blog/": "Olá, Karol. Vim pelo blog e gostaria de tirar uma dúvida sobre as massagens.",
+};
+
+const commercialDepthContent: Record<string, {
+  heading: string;
+  intro: string;
+  image: string;
+  imageAlt: string;
+  cards: { title: string; text: string }[];
+}> = {
+  "/massagem-sensual-campinas/": {
+    heading: "Massagem sensual e erótica em Campinas: como escolher",
+    intro: "Os termos sensual e erótica costumam aparecer na mesma busca, mas o mais importante é entender a proposta antes de marcar. O contato inicial serve para alinhar expectativas, tirar dúvidas e conhecer os limites da experiência oferecida no Cambuí.",
+    image: "/imagens/galeria/experiencia-sensorial-massagem-campinas.webp",
+    imageAlt: "Experiência de massagem sensual em ambiente privativo em Campinas",
+    cards: [
+      { title: "Conversa antes da sessão", text: "Você pode consultar horários e esclarecer como funciona o atendimento antes de decidir, sem precisar escolher a modalidade no primeiro contato." },
+      { title: "Ambiente reservado", text: "O atendimento acontece com horário marcado, em espaço privativo no Cambuí e com contato direto pelo WhatsApp." },
+      { title: "Experiência alinhada", text: "A proposta, o ritmo e os limites são esclarecidos previamente para que a escolha seja consciente e sem expectativa equivocada." },
+    ],
+  },
+  "/massagem-nuru-campinas/": {
+    heading: "Como funciona a Massagem Nuru em Campinas",
+    intro: "A Massagem Nuru é conhecida pelo uso de gel e pelos movimentos de deslizamento corporal. Antes da sessão, vale esclarecer a preparação do ambiente, os cuidados de higiene e a dinâmica da experiência para chegar com expectativas alinhadas.",
+    image: "/imagens/galeria/tecnica-massagem-nuru-campinas.webp",
+    imageAlt: "Técnica de Massagem Nuru realizada em Campinas",
+    cards: [
+      { title: "Gel e preparação", text: "O gel e o ambiente são preparados para a modalidade, com atenção à temperatura e ao conforto durante a experiência." },
+      { title: "Privacidade no Cambuí", text: "A sessão é realizada com horário reservado, sem recepção compartilhada e com o endereço informado no contato de agendamento." },
+      { title: "Dúvidas antes de marcar", text: "Quem nunca fez Nuru pode conversar pelo WhatsApp para entender a dinâmica, os horários e a diferença em relação às outras massagens." },
+    ],
+  },
+  "/massagem-tantrica-campinas/": {
+    heading: "O que considerar antes da Massagem Tântrica em Campinas",
+    intro: "A Massagem Tântrica trabalha presença, respiração e percepção corporal. Uma escolha segura começa por uma explicação clara da proposta, respeito aos limites e liberdade para tirar dúvidas antes do agendamento.",
+    image: "/imagens/galeria/toque-terapeutico-tantrico-campinas.webp",
+    imageAlt: "Toque consciente em sessão de Massagem Tântrica em Campinas",
+    cards: [
+      { title: "Primeira experiência", text: "Não é necessário conhecer Tantra. A conversa inicial ajuda a entender a proposta e a chegar à sessão com mais tranquilidade." },
+      { title: "Ritmo e consentimento", text: "A experiência deve respeitar o ritmo de cada pessoa, com comunicação clara e possibilidade de interromper ou ajustar a qualquer momento." },
+      { title: "Atendimento local", text: "O espaço fica no Cambuí, em Campinas, e funciona com horário marcado para preservar privacidade e organização." },
+    ],
+  },
+  "/massagem-lingam-campinas/": {
+    heading: "Massagem Lingam em Campinas com orientação prévia",
+    intro: "A Massagem Lingam é procurada por homens interessados em sensibilidade corporal, presença e bem-estar. O primeiro contato é o momento de entender a proposta, esclarecer limites e verificar se a modalidade corresponde ao que você procura.",
+    image: "/imagens/galeria/massagista-profissional-campinas.webp",
+    imageAlt: "Atendimento profissional de massagem no Cambuí em Campinas",
+    cards: [
+      { title: "Explicação objetiva", text: "Antes de marcar, você pode perguntar como a modalidade é conduzida e quais são as diferenças em relação à tântrica e à sensual." },
+      { title: "Respeito ao seu ritmo", text: "A experiência é conduzida com comunicação, privacidade e atenção ao nível de conforto informado durante a sessão." },
+      { title: "Contato reservado", text: "Horários e informações são tratados diretamente pelo WhatsApp, sem ligação e sem atendimento intermediado." },
+    ],
+  },
+  "/massagem-4-maos-campinas/": {
+    heading: "Massagem 4 mãos em Campinas: sincronia e disponibilidade",
+    intro: "A Massagem 4 mãos envolve duas profissionais atuando de forma coordenada. Como depende da disponibilidade conjunta, a consulta prévia é essencial para confirmar agenda, entender a dinâmica e alinhar a experiência.",
+    image: "/imagens/galeria/ambiente-acolhedor-massagem-campinas.webp",
+    imageAlt: "Espaço privativo para massagens no Cambuí em Campinas",
+    cards: [
+      { title: "Agenda combinada", text: "A disponibilidade precisa ser confirmada com antecedência porque a sessão depende da organização de duas profissionais." },
+      { title: "Movimentos coordenados", text: "A proposta utiliza movimentos simultâneos e sincronizados, criando uma percepção corporal diferente de uma sessão individual." },
+      { title: "Ambiente privativo", text: "O atendimento acontece em espaço reservado no Cambuí, com horário definido e orientações enviadas no contato prévio." },
+    ],
+  },
+};
+
+const editorialContent: Record<string, string[]> = {
+  "/blog/como-apimentar-relacao-tantra/": [
+    "Olhar nos olhos, diminuir o ritmo e prestar atenção à respiração muda a qualidade do encontro. O toque deixa de ser automático quando cada pessoa percebe as reações do parceiro e permanece presente, sem antecipar o próximo movimento.",
+    "Em casa, o casal pode começar por mãos, ombros, costas e pés, usando movimentos lentos e pressão confortável. Alternar quem oferece e quem recebe o toque ajuda a reduzir a pressa, amplia a percepção corporal e cria um momento de conexão sem cobrança por resultado.",
+    "Uma sessão profissional pode apresentar ritmos, formas de respiração e maneiras de comunicar limites que depois servem de referência para o casal. A proposta não é reproduzir uma técnica sem orientação, mas levar para a relação mais presença, diálogo e cuidado.",
+  ],
+  "/blog/comunicacao-nao-verbal-toque/": [
+    "Um toque acolhedor pode transmitir segurança quando existe consentimento, atenção e respeito ao momento do outro. Ao reduzir a sensação de alerta, ele favorece relaxamento e proximidade emocional, mas cada pessoa reage de maneira diferente e seus limites devem ser observados.",
+    "O carinho distraído acontece enquanto a atenção está em outro lugar. O toque consciente tem intenção clara: quem toca acompanha a respiração, percebe a tensão muscular e ajusta pressão e velocidade, transformando um gesto simples em comunicação corporal.",
+    "Respiração mais profunda, aproximação espontânea e relaxamento do corpo costumam indicar conforto. Rigidez, afastamento ou silêncio incomum pedem uma pausa e uma pergunta direta. A melhor leitura corporal sempre é confirmada por diálogo, nunca por suposição.",
+  ],
+  "/blog/guia-relaxamento-pos-trabalho-campinas/": [
+    "O Cambuí reúne ruas arborizadas, cafés, restaurantes e serviços de bem-estar em uma região central de Campinas. Essa combinação permite transformar o fim do expediente em uma pausa de autocuidado, com opções tranquilas e atendimento reservado sem precisar atravessar a cidade.",
+    "Para quem trabalha no Centro, Taquaral, Nova Campinas ou bairros próximos, o acesso ao Cambuí é direto por avenidas importantes. Planejar o deslocamento fora do horário de pico e confirmar o horário previamente ajuda a chegar sem pressa e aproveitar melhor o período de relaxamento.",
+  ],
+  "/blog/liberacao-miofascial-vs-tantrica/": [
+    "A liberação miofascial utiliza pressão e movimentos direcionados aos tecidos que envolvem músculos e articulações. A massagem tântrica trabalha percepção corporal, respiração e toques mais sutis. São propostas diferentes e a escolha deve partir do objetivo de cada pessoa.",
+    "Quem pratica esporte ou convive com rigidez e pontos de tensão costuma procurar avaliação de fisioterapeuta ou massoterapeuta habilitado para técnicas musculoesqueléticas. Dor persistente, lesão ou limitação de movimento exige orientação de um profissional de saúde antes de qualquer massagem.",
+    "A abordagem tântrica costuma ser buscada por quem deseja desacelerar, ampliar a consciência corporal e viver uma experiência de presença e conexão. Ela não substitui tratamento médico ou psicológico, mas pode integrar uma rotina de autocuidado quando realizada com consentimento e expectativas claras.",
+  ],
+  "/blog/massagem-prostatica-saude/": [
+    "A próstata é uma glândula do sistema reprodutor masculino localizada abaixo da bexiga. Qualquer procedimento interno ou intervenção com finalidade clínica deve ser realizado somente por profissional de saúde habilitado. Massagem corporal voltada ao bem-estar não equivale a exame, diagnóstico ou tratamento urológico.",
+    "Um atendimento responsável começa com explicação clara, consentimento e possibilidade de interromper a experiência a qualquer momento. Higiene, materiais adequados, privacidade e respeito aos limites são indispensáveis. Dor, sangramento, inflamação ou sintomas urinários devem ser avaliados por um urologista.",
+  ],
+  "/blog/massagem-sensual-casais-dicas/": [
+    "Luz indireta, temperatura agradável e uma música escolhida pelos dois ajudam o corpo a desacelerar. O ambiente deve ser organizado antes, com celulares afastados, toalhas limpas e tempo suficiente para que a experiência não seja interrompida.",
+    "Prefira óleo corporal próprio para massagem e teste uma pequena quantidade na pele antes de usar. Velas específicas para massagem devem ter temperatura segura; velas decorativas não servem para aplicação corporal. Aromas suaves são melhores quando ambos gostam e não possuem sensibilidade.",
+    "Comece por áreas neutras, como mãos, ombros, costas e pés. Explore pressão, ritmo e temperatura gradualmente, perguntando o que está confortável. Paciência e comunicação tornam a experiência mais envolvente do que tentar seguir uma sequência rígida.",
+  ],
+  "/blog/melhores-spas-vs-atendimento-privado/": [
+    "No atendimento privado, o contato costuma acontecer diretamente com a profissional, sem recepção cheia ou circulação de outras pessoas. Isso facilita esclarecer dúvidas antes da visita e cria uma experiência mais previsível para quem valoriza discrição.",
+    "Grandes centros oferecem estrutura ampla, mas também podem ter áreas compartilhadas e maior fluxo de clientes. Um espaço reservado no Cambuí atende uma pessoa por horário e reduz a exposição, mantendo localização central e acesso conveniente.",
+    "Técnicas sensoriais como massagem tântrica e Nuru exigem preparo específico, comunicação clara e ambiente adequado. Em vez de escolher apenas pela estrutura do local, verifique experiência profissional, higiene, limites do atendimento e compatibilidade com o que você procura.",
+  ],
+  "/blog/turismo-bem-estar-rmc/": [
+    "Moradores da Região Metropolitana de Campinas têm buscado pausas curtas de bem-estar sem a necessidade de uma viagem longa. Uma tarde livre, uma boa refeição e uma sessão de relaxamento podem funcionar como uma microférias planejada perto de casa.",
+    "Campinas recebe facilmente visitantes de Valinhos, Sumaré, Hortolândia, Paulínia e Indaiatuba pelas principais rodovias da região. Essa proximidade amplia o acesso a serviços especializados e permite voltar para casa no mesmo dia.",
+    "O atendimento no Cambuí segue o mesmo padrão para clientes de toda a RMC: conversa prévia, horário reservado, ambiente privativo e orientação sobre a modalidade escolhida. Confirmar disponibilidade e trajeto antes de sair evita espera e deixa a experiência mais tranquila.",
+  ],
+  "/blog/yoga-e-tantra-conexao/": [
+    "Pranayama é o conjunto de práticas de respiração do yoga. Respirar de forma lenta e consciente ajuda a perceber tensões e a permanecer no momento, habilidade que também favorece uma experiência de massagem mais atenta e menos ansiosa.",
+    "A prática regular de yoga treina observação sem julgamento. Quando a mente está menos acelerada, fica mais fácil comunicar limites, reconhecer sensações e receber o toque sem tentar controlar cada etapa da experiência.",
+    "Antes da sessão, experimente movimentos leves para pescoço, ombros e quadris, seguidos por alguns minutos de respiração confortável. Evite alongamentos intensos ou técnicas respiratórias avançadas sem orientação; o objetivo é chegar relaxado, não cansado.",
+  ],
+};
+
+function replaceEditorialPlaceholders(html: string, route: string) {
+  const replacements = editorialContent[route];
+  if (!replacements) return html;
+
+  let index = 0;
+  return html.replace(/\[CONTEÚDO:[\s\S]*?\]/g, () => replacements[index++] ?? "");
+}
+
+function enhanceLegacyHtml(rawHtml: string, route: string) {
+  const config = commercialPages[route];
+  let output = replaceEditorialPlaceholders(rawHtml, route);
+
+  output = optimizePerformance(output);
+  output = normalizeHeadingSemantics(output);
+  output = promoteGalleryPhoto(output);
+  output = injectClimateControlledCopy(output, route);
+  output = injectBrandLogo(output, route);
+  output = injectAboutSection(output, route);
+  output = refineLocalPageStructure(output, route);
+  output = refineRegionalLandingCopy(output, route);
+  output = normalizeInternalLinks(output);
+  const localConfig = localLandingPages[route];
+  output = updateWhatsappLinks(output, route, config?.whatsappText ?? localConfig?.whatsappText ?? getDefaultWhatsappText(route));
+  output = updateCtaLabels(output);
+  output = replaceCanonical(output, route);
+  output = replaceOgUrl(output, route);
+  output = applyIndexingRules(output, route);
+
+  if (config) {
+    output = replaceTitle(output, config.title);
+    output = replaceDescription(output, config.description);
+    output = injectJsonLd(output, buildServiceSchema(route, config));
+    output = injectJsonLd(output, buildFaqSchema(config.faq));
+    output = injectFaqSection(output, config.faq);
+    output = injectCommercialDepthSection(output, route, config.serviceName);
+  }
+
+  if (localConfig) {
+    output = replaceTitle(output, localConfig.title);
+    output = replaceDescription(output, localConfig.description);
+    output = injectLocalLandingSection(output, localConfig);
+    output = injectJsonLd(output, buildLocalLandingSchema(route, localConfig));
+  }
+
+  const seoOverride = seoOverrides[route];
+  if (seoOverride) {
+    output = replaceTitle(output, seoOverride.title);
+    output = replaceDescription(output, seoOverride.description);
+  }
+
+  if (route === "/servicos/") {
+    output = injectServicesHubSection(output);
+  }
+
+  if (route === "/blog/") {
+    output = injectBlogIndexLinks(output);
+  }
+
+  if (route.startsWith("/blog/") && route !== "/blog/") {
+    if (!output.includes('"@type":"BlogPosting"')) {
+      output = injectJsonLd(output, buildArticleSchema(output, route));
+    }
+    output = injectBlogRecoverySection(output, route);
+  }
+
+  output = injectJsonLd(output, buildBreadcrumbSchema(route));
+  output = injectEnhancementStyles(output);
+  output = injectConversionSection(output, route, config?.serviceName);
+  output = injectMobileWhatsappBar(output, route, config?.serviceName);
+  output = sanitizeStructuredData(output);
+  output = ensureSocialMetadata(output);
+  output = addImageDimensions(output);
+  output = injectLightweightInteractions(output);
+  output = moveStructuredDataToBodyEnd(output);
+
+  return output;
+}
+
+function moveStructuredDataToBodyEnd(html: string) {
+  const headEnd = html.indexOf("</head>");
+  if (headEnd < 0) return html;
+
+  const head = html.slice(0, headEnd);
+  const body = html.slice(headEnd);
+  const scripts: string[] = [];
+  const cleanedHead = head.replace(/<script[^>]+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/g, (script) => {
+    scripts.push(script);
+    return "";
+  });
+
+  if (scripts.length === 0) return html;
+  return `${cleanedHead}${body.replace("</body>", `${scripts.join("")}</body>`)}`;
+}
+
+function optimizePerformance(html: string) {
+  return html
+    .replace(/@font-face\{[^}]*src:url\(['"]?\/fonts\/(?:Montserrat-Bold|Poppins-Light|Poppins-Medium|Poppins-Bold)\.woff2['"]?\)[^}]*\}/g, "")
+    .replace(/<astro-island\b(?=[^>]*component-url="\/_astro\/(?:Navbar|HeroSection|GallerySection|FullGallery|WhatsAppFloat|SpaceSection|TestimonialsSection|FAQSection|SiloLinks)[^"]+")[^>]*>([\s\S]*?)(?:<!--astro:end-->)?<\/astro-island>/g, "$1")
+    .replace(/<astro-island\b(?=[^>]*component-url="\/_astro\/(?:toaster|sonner)[^"]+")[^>]*>[\s\S]*?(?:<!--astro:end-->)?<\/astro-island>/g, "")
+    .replace(/<style>astro-island,astro-slot,astro-static-slot\{display:contents\}<\/style>/g, "")
+    .replace(/<script>([\s\S]*?)<\/script>/g, (script, content) => {
+      if (content.includes('customElements.define("astro-island"') || content.includes("self.Astro") || content.includes('new Event("astro:')) return "";
+      return script;
+    })
+    .replace(/<img([^>]*?)\/\s+(fetchpriority|loading)=/g, "<img$1 $2=")
+    .replace(/<img([^>]*?)\/\s+fetchpriority="high">/g, '<img$1 fetchpriority="high" decoding="async">')
+    .replace(/background-image:url\(&#x27;https:\/\/user-images\.githubusercontent\.com\/15075759\/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21\.png&#x27;\)/g, "background-image:radial-gradient(circle at 1px 1px,rgba(17,27,33,.16) 1px,transparent 0);background-size:18px 18px")
+    .replace(/poster="\/imagens\/galeria\/video-massagem-campinas\.mp4#t=0\.001"/g, 'poster="/imagens/galeria/experiencia-sensorial-massagem-campinas.webp"')
+    .replace(/(<video\b[^>]*?)preload="auto"/g, '$1preload="none"')
+    .replace(/<link rel="preload" as="font" href="\/fonts\/(?:Montserrat-Bold|Poppins-Bold)\.woff2" type="font\/woff2" crossorigin>/g, "")
+    .replace(/<link rel="preload" href="([^"]+\.css)" as="style" onload="this\.onload=null;this\.rel='stylesheet'"><noscript><link rel="stylesheet" href="\1"><\/noscript>/g, (_match, href: string) => inlineLegacyStylesheet(href));
+}
+
+function inlineLegacyStylesheet(href: string) {
+  const stylesheetPath = path.resolve(process.cwd(), "public", href.replace(/^\//, ""));
+  if (!fs.existsSync(stylesheetPath)) return `<link rel="stylesheet" href="${href}">`;
+  const stylesheet = fs.readFileSync(stylesheetPath, "utf8").replace(
+    /@font-face\{[^}]+src:url\(\/fonts\/(?:Montserrat-Bold|Poppins-Light|Poppins-Medium|Poppins-Bold)\.woff2\)[^}]*\}/g,
+    ""
+  );
+  return `<style data-critical-legacy-css>${stylesheet}</style>`;
+}
+
+function normalizeHeadingSemantics(html: string) {
+  let output = html.replace(
+    /<h2 class="font-montserrat font-black text-4xl text-brand uppercase tracking-tighter">([\s\S]*?)<\/h2>/g,
+    '<div class="font-montserrat font-black text-4xl text-brand uppercase tracking-tighter">$1</div>'
+  );
+
+  output = output.replace(/<footer\b[\s\S]*?<\/footer>/g, (footer) => footer
+    .replace(/<h4\b([^>]*)>/g, "<p$1>")
+    .replace(/<\/h4>/g, "</p>"));
+
+  return output;
+}
+
+function injectBrandLogo(html: string, route: string) {
+  const logo = '<img src="/imagens/hero/karol-logo-site.webp" alt="Karol Massagem Tântrica" width="400" height="400" decoding="async">';
+  const navClass = route === "/" ? "karol-site-nav karol-site-nav--home" : "karol-site-nav";
+  let output = html.replace(/<nav class="fixed top-0/, `<nav class="${navClass} fixed top-0`);
+  output = output.replace(/<a href="\/" class="flex flex-col"><span class="font-montserrat font-black text-2xl[\s\S]*?<\/span><span class="text-\[0\.65rem\][\s\S]*?<\/span><\/a>/, `<a href="/" class="karol-site-nav__brand" aria-label="Karol Massagem Tântrica — página inicial">${logo}</a>`);
+  output = output.replace(/<div class="text-center mb-8"><div class="font-montserrat font-black text-4xl[\s\S]*?<\/div><p class="text-xs font-poppins[\s\S]*?<\/p><\/div>/, `<div class="karol-site-nav__menu-brand">${logo}</div>`);
+  output = output.replace(/<footer\b[\s\S]*?<\/footer>/, (footer) => footer.replace(/(<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">)/, `$1<a class="karol-footer-brand" href="/" aria-label="Karol Massagem Tântrica — página inicial">${logo}</a>`));
+  return output.replace('</head>', `<style data-brand-logo-styles>
+    .karol-site-nav{padding-top:6px!important;padding-bottom:6px!important}
+    .karol-site-nav>div>.h-16{height:84px}
+    .karol-site-nav__brand{display:block;flex:none}
+    .karol-site-nav__brand img{display:block;width:84px;height:84px;object-fit:contain}
+    .karol-site-nav__menu-brand img{display:block;width:160px;height:160px;object-fit:contain}
+    .karol-footer-brand{display:table;margin:0 0 16px}
+    .karol-footer-brand img{display:block;width:72px;height:72px;object-fit:contain;opacity:.82}
+    .karol-site-nav--home{position:absolute!important;background:linear-gradient(180deg,rgba(27,12,8,.7),rgba(27,12,8,0))!important;border:0!important;box-shadow:none!important;backdrop-filter:none!important}
+    .karol-site-nav--home .shadow-inner{background:transparent!important;border-color:transparent!important;box-shadow:none!important}
+    .karol-site-nav--home a[href^="/#"],.karol-site-nav--home a[href="/servicos/"],.karol-site-nav--home a[href="/blog/"]{color:#fff!important;text-shadow:0 1px 8px rgba(0,0,0,.65)}
+    .karol-site-nav--home a[href^="/#"]:hover,.karol-site-nav--home a[href="/servicos/"]:hover,.karol-site-nav--home a[href="/blog/"]:hover{color:#f3c993!important}
+    @media(max-width:767px){.karol-site-nav{padding:0!important}.karol-site-nav>div>.h-16{height:96px;justify-content:center}.karol-site-nav [class~="md:hidden"]{display:none!important}.karol-site-nav__brand img{width:84px;height:84px}.karol-site-nav--home{background:#24120f!important}.karol-footer-brand{margin-bottom:14px}.karol-footer-brand img{width:60px;height:60px}}
+  </style></head>`);
+}
+
+const imageDimensions: Record<string, [number, number]> = {
+  "/imagens/blog/beneficios-massagem-tantrica.webp": [593, 842],
+  "/imagens/blog/nuru-vs-tantrica.webp": [715, 855],
+  "/imagens/blog/performance-masculina-tantra.webp": [522, 709],
+  "/imagens/galeria/ambiente-acolhedor-massagem-campinas.webp": [489, 596],
+  "/imagens/galeria/atendimento-exclusivo-massagem-campinas.jpg": [410, 527],
+  "/imagens/galeria/carinho-massagem-tantrica-campinas.webp": [553, 638],
+  "/imagens/galeria/conexao-corporal-massagem-campinas.webp": [301, 402],
+  "/imagens/galeria/experiencia-sensorial-massagem-campinas.webp": [512, 713],
+  "/imagens/galeria/massagem-relaxante-profissional-campinas.jpg": [600, 400],
+  "/imagens/galeria/massagista-profissional-campinas.webp": [522, 709],
+  "/imagens/galeria/relaxamento-profundo-massagem-campinas.webp": [593, 842],
+  "/imagens/galeria/sessao-massagem-nuru-campinas.webp": [521, 663],
+  "/imagens/galeria/tecnica-massagem-nuru-campinas.webp": [715, 855],
+  "/imagens/galeria/toque-terapeutico-tantrico-campinas.webp": [470, 595],
+  "/imagens/sobre-mim/karol-massagista-tantrica-campinas-sobre.webp": [595, 759],
+};
+
+function addImageDimensions(html: string) {
+  return html.replace(/<img\b[^>]*>/g, (tag) => {
+    const source = tag.match(/\bsrc=["']([^"'?]+)/)?.[1];
+    const dimensions = source ? imageDimensions[source] : undefined;
+    let output = tag;
+    if (dimensions && !/\bwidth=/.test(output)) output = output.replace("<img", `<img width="${dimensions[0]}"`);
+    if (dimensions && !/\bheight=/.test(output)) output = output.replace("<img", `<img height="${dimensions[1]}"`);
+    if (!/\bdecoding=/.test(output)) output = output.replace("<img", '<img decoding="async"');
+    return output;
+  });
+}
+
+function sanitizeStructuredData(html: string) {
+  const currentTitle = stripHtml(getMetaValue(html, /<title>(.*?)<\/title>/i));
+  const currentDescription = stripHtml(getMetaValue(html, /<meta name="description" content="([^"]*)"/i));
+  const currentCanonical = getMetaValue(html, /<link rel="canonical" href="([^"]*)"/i);
+
+  return html.replace(/(<script[^>]+type=["']application\/ld\+json["'][^>]*>)([\s\S]*?)(<\/script>)/g, (full, opening, json, closing) => {
+    try {
+      const data = JSON.parse(json);
+      normalizeStructuredDataUrls(data);
+      const objects = Array.isArray(data) ? data : [data];
+      if (objects.some((object) => object?.["@type"] === "AggregateRating")) return "";
+      for (const object of objects) {
+        const types = Array.isArray(object?.["@type"]) ? object["@type"] : [object?.["@type"]];
+        if (types.includes("WebPage")) {
+          object.name = currentTitle;
+          object.description = currentDescription;
+          object.url = currentCanonical;
+        }
+        if (types.includes("BlogPosting") || types.includes("Article")) {
+          object.headline = currentTitle;
+          object.description = currentDescription;
+          object.url = currentCanonical;
+          if (typeof object.mainEntityOfPage === "string") object.mainEntityOfPage = currentCanonical;
+          if (object.mainEntityOfPage?.["@id"]) object.mainEntityOfPage["@id"] = currentCanonical;
+        }
+        if (!types.includes("LocalBusiness")) continue;
+        delete object.aggregateRating;
+        if (Array.isArray(object.sameAs)) object.sameAs = object.sameAs.filter((url: string) => !url.includes("wa.me/"));
+        if (object.address?.streetAddress === "Campinas Cambuí - Região Central") {
+          delete object.address.streetAddress;
+          delete object.address.postalCode;
+        }
+      }
+      return `${opening}${JSON.stringify(data)}${closing}`;
+    } catch {
+      return full;
+    }
+  });
+}
+
+function normalizeStructuredDataUrls(value: unknown): void {
+  if (Array.isArray(value)) {
+    value.forEach(normalizeStructuredDataUrls);
+    return;
+  }
+  if (!value || typeof value !== "object") return;
+
+  for (const [key, child] of Object.entries(value)) {
+    if (typeof child === "string" && child.startsWith("https://karolmassagista.com.br")) {
+      const [base, hash = ""] = child.split("#", 2);
+      const parsed = new URL(base);
+      if (parsed.pathname !== "/" && !parsed.pathname.endsWith("/") && !/\.[a-z0-9]+$/i.test(parsed.pathname)) {
+        parsed.pathname = `${parsed.pathname}/`;
+      }
+      (value as Record<string, unknown>)[key] = `${parsed.toString()}${hash ? `#${hash}` : ""}`;
+      continue;
+    }
+    normalizeStructuredDataUrls(child);
+  }
+}
+
+function injectLightweightInteractions(html: string) {
+  if (html.includes("data-lightweight-interactions")) return html;
+  const interactiveHtml = html.replace(
+    /<button([^>]*)>((?:(?!<\/button>)[\s\S])*)<\/button><div class="([^"]*max-h-0[^"]*)">/g,
+    '<button$1 type="button" aria-expanded="false" onclick="window.toggleLegacyFaq(this)">$2</button><div class="$3">'
+  );
+  return interactiveHtml.replace(
+    "</body>",
+    `<script data-lightweight-interactions>
+      window.toggleLegacyFaq=button=>{
+        const answer=button.nextElementSibling;
+        if(!answer)return;
+        const expanded=button.getAttribute("aria-expanded")==="true";
+        button.setAttribute("aria-expanded",String(!expanded));
+        answer.style.maxHeight=expanded?"0px":answer.scrollHeight+"px";
+        answer.classList.toggle("opacity-0",expanded);
+      };
+      document.addEventListener("DOMContentLoaded",()=>{
+        const openButton=document.querySelector('[aria-label="Abrir menu"]');
+        const menu=openButton?.closest("nav")?.querySelector(".fixed.inset-0");
+        const closeButton=menu?.querySelector("button");
+        const toggleMenu=(open)=>{if(!menu)return;menu.classList.toggle("translate-x-full",!open);document.body.style.overflow=open?"hidden":"";openButton?.setAttribute("aria-expanded",String(open));};
+        openButton?.setAttribute("aria-expanded","false");
+        closeButton?.setAttribute("aria-label","Fechar menu");
+        openButton?.addEventListener("click",()=>toggleMenu(true));
+        closeButton?.addEventListener("click",()=>toggleMenu(false));
+        menu?.querySelectorAll("a").forEach(link=>link.addEventListener("click",()=>toggleMenu(false)));
+      });
+    </script></body>`
+  );
+}
+
+function promoteGalleryPhoto(html: string) {
+  return html.replace(
+    /src="\/imagens\/galeria\/atendimento-exclusivo-massagem-campinas\.jpg" alt="Massagem tântrica e sensual em Campinas - Karol Massagista foto 3"/,
+    'src="/imagens/galeria/carinho-massagem-tantrica-campinas.webp" alt="Massagem tântrica e sensual em Campinas - Karol Massagista foto 3"'
+  );
+}
+
+function injectClimateControlledCopy(html: string, route: string) {
+  let output = html;
+
+  if (route === "/") {
+    output = output.replace(
+      '<link rel="preload" as="image" href="/imagens/hero/karol-massagista-tantrica-hero-campinas-v2.webp" type="image/webp" fetchpriority="high">',
+      '<link rel="preload" as="image" href="/imagens/hero/karol-spa-relaxante-desktop-v2.webp" type="image/webp" media="(min-width: 768px)" fetchpriority="high"><link rel="preload" as="image" href="/imagens/hero/karol-spa-relaxante-mobile-v2.webp" type="image/webp" media="(max-width: 767px)" fetchpriority="high">'
+    );
+    output = output.replace(
+      /<section id="inicio"[\s\S]*?<\/section>/,
+      `<section id="inicio" class="home-hero" aria-labelledby="home-hero-title">
+        <picture class="home-hero__media">
+          <source media="(max-width: 767px)" srcset="/imagens/hero/karol-spa-relaxante-mobile-v2.webp" width="900" height="900">
+          <img class="home-hero__image" src="/imagens/hero/karol-spa-relaxante-desktop-v2.webp" width="1672" height="941" alt="Karol realizando uma massagem em um ambiente de spa à luz de velas" fetchpriority="high" decoding="async">
+        </picture>
+        <div class="home-hero__inner">
+          <div class="home-hero__content">
+            <p class="home-hero__eyebrow">Atendimento privativo no Cambuí</p>
+            <h1 id="home-hero-title">Massagens em <span>Campinas</span></h1>
+            <p class="home-hero__lead">Massagens tântrica, Nuru, sensual e Lingam em uma sala climatizada e reservada no Cambuí, com contato direto e horário marcado.</p>
+            <div class="home-hero__actions">
+              <a class="home-hero__cta" href="https://wa.me/5519983732331" target="_blank" rel="noopener noreferrer" data-gtm-event="whatsapp_click" data-gtm-category="cta" data-gtm-label="hero_agendar">Falar com a Karol</a>
+              <p class="home-hero__location">Cambuí, Campinas · Horário marcado</p>
+            </div>
+          </div>
+        </div>
+      </section>`
+    );
+    output = output.replace(
+      "</head>",
+      `<style data-home-hero-styles>
+        #inicio.home-hero{position:relative;display:flex;align-items:center;min-height:100svh;margin-top:0;overflow:hidden;background:#24120f;color:#fff}
+        .home-hero__media{position:absolute;inset:0;display:block}
+        .home-hero__media::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(24,12,10,.9) 0%,rgba(24,12,10,.73) 30%,rgba(24,12,10,.23) 62%,transparent 100%)}
+        .home-hero__image{display:block;width:100%;height:100%;object-fit:cover;object-position:center}
+        .home-hero__inner{position:relative;z-index:1;width:min(100% - 48px,1280px);margin:0 auto;padding:150px 0 96px}
+        .home-hero__content{max-width:610px}
+        .home-hero__eyebrow{display:flex;align-items:center;gap:11px;margin:0 0 24px;color:#e9bb85;font:700 11px/1.4 Poppins,sans-serif;letter-spacing:.17em;text-transform:uppercase}
+        .home-hero__eyebrow::before{content:"";width:8px;height:8px;border-radius:50%;background:#e9bb85}
+        .home-hero h1{margin:0;color:#fff;font:900 clamp(48px,5.2vw,76px)/.99 Montserrat,sans-serif;letter-spacing:-.045em;text-wrap:balance}
+        .home-hero h1 span{display:block;color:#e9bb85}
+        .home-hero__lead{max-width:560px;margin:30px 0 0;color:rgba(255,255,255,.88);font:400 18px/1.65 Poppins,sans-serif}
+        .home-hero__actions{display:flex;align-items:center;gap:24px;margin-top:34px}
+        .home-hero__cta{display:inline-flex;align-items:center;justify-content:center;min-height:54px;padding:14px 28px;border-radius:999px;background:#e9bb85;color:#28140f;font:700 13px/1.2 Poppins,sans-serif;letter-spacing:.06em;text-transform:uppercase;transition:background .2s,transform .2s}
+        .home-hero__cta:hover{background:#f6d1a4;transform:translateY(-2px)}
+        .home-hero__cta:focus-visible{outline:3px solid #fff;outline-offset:3px}
+        .home-hero__location{margin:0;color:rgba(255,255,255,.74);font:500 12px/1.4 Poppins,sans-serif}
+        @media(max-width:767px){
+          #inicio.home-hero{display:block;min-height:0;margin-top:0;padding-top:96px}
+          .home-hero__media{position:relative;height:clamp(300px,84vw,450px)}
+          .home-hero__media::after{background:linear-gradient(to bottom,transparent 50%,rgba(36,18,15,.4) 72%,#24120f 100%)}
+          .home-hero__image{object-fit:cover;object-position:center top}
+          .home-hero__inner{width:auto;margin:-6px 0 0;padding:0 24px 80px}
+          .home-hero__content{max-width:520px;margin:0 auto}
+          .home-hero__eyebrow{margin-bottom:20px;font-size:10px}
+          .home-hero h1{font-size:clamp(40px,11vw,56px);line-height:1.04}
+          .home-hero h1 span{margin-top:3px}
+          .home-hero__lead{margin-top:22px;font-size:16px;line-height:1.6}
+          .home-hero__actions{align-items:flex-start;flex-direction:column;gap:16px;margin-top:28px}
+          .home-hero__cta{width:100%}
+        }
+      </style></head>`
+    );
+    output = output.replace(
+      "Localizado no coração do Cambuí, Campinas. <br class=\"md:hidden\"/>Para saber o local exato e agendar, entre em contato via WhatsApp.",
+      "Localizado no coração do Cambuí, Campinas. <br class=\"md:hidden\"/>Espaço reservado e climatizado. Para saber o local exato e agendar, entre em contato via WhatsApp."
+    );
+    output = output.replace(
+      "Ambiente Climatizado",
+      "Ambiente climatizado"
+    );
+    output = output.replace(
+      "Sim. Atendo em Campinas, no bairro Cambuí. Ambiente limpo, reservado e 100% seguro. O endereço completo é passado diretamente no WhatsApp, após o agendamento.",
+      "Sim. Atendo em Campinas, no bairro Cambuí. Ambiente limpo, reservado e climatizado. O endereço completo é passado diretamente no WhatsApp, após o agendamento."
+    );
+    output = output.replace(
+      "A Lingam é uma finalização das massagens, sempre com foco no prazer, no respeito e no seu tempo.",
+      "A Lingam é uma finalização das massagens, sempre com foco no prazer, no respeito e no seu tempo."
+    );
+    output = output.replace(
+      "Claro. Sem pressão, sem obrigação. Se quiser tirar dúvidas antes, é só me chamar no WhatsApp.",
+      "Claro. Sem pressão, sem obrigação. Se quiser tirar dúvidas antes, inclusive sobre o ambiente e as modalidades, é só me chamar no WhatsApp."
+    );
+    output = output.replace(
+      "</div></div></section><!--astro:end--></astro-island> <section id=\"contato\"",
+      `<div class="bg-white rounded-[2rem] border transition-all duration-300 border-stone-100 hover:border-stone-200 shadow-sm"><button class="w-full px-8 py-6 text-left flex justify-between items-center group"><h3 class="font-montserrat font-bold text-lg transition-colors text-stone-800">A sala é climatizada?</h3><div class="w-8 h-8 rounded-full flex items-center justify-center transition-all bg-stone-50 text-stone-400 group-hover:bg-stone-100"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus"><path d="M5 12h14"></path><path d="M12 5v14"></path></svg></div></button><div class="px-8 overflow-hidden transition-all duration-500 ease-in-out max-h-0 opacity-0"><p class="font-poppins text-stone-60 * font-light leading-relaxed border-t border-stone-50 pt-6">Sim. O atendimento acontece em uma sala climatizada e preparada para oferecer conforto durante toda a experiência.</p></div></div></div></div></section><!--astro:end--></astro-island> <section id=\"contato\"`
+    );
+  }
+
+  if (route === "/servicos/") {
+    output = output.replace(
+      "Deslizamento corporal intenso com gel japonês exclusivo em ambiente climatizado.",
+      "Deslizamento corporal intenso com gel japonês exclusivo em ambiente climatizado."
+    );
+  }
+
+  return output;
+}
+
+function injectAboutSection(html: string, route: string) {
+  if (route !== "/") return html;
+
+  const section = `<section id="sobre" class="home-about" aria-labelledby="home-about-title">
+    <div class="home-about__shell">
+      <div class="home-about__visual">
+        <figure class="home-about__portrait"><img src="/imagens/sobre-mim/karol-camisa-brasil-sobre.webp" width="800" height="1000" alt="Karol em um ambiente privativo em Campinas" loading="lazy" decoding="async"></figure>
+      </div>
+      <div class="home-about__content">
+        <p class="home-about__eyebrow">Sobre mim <span aria-hidden="true"></span></p>
+        <h2 id="home-about-title">Por que eu sou a <em>massagista certa</em> pra você.</h2>
+        <div class="home-about__features">
+          <div class="home-about__feature"><span class="home-about__icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16 26c-5-4-6-9-5-15 3 1 5 3 5 6 0-3 2-5 5-6 1 6 0 11-5 15Z"/><path d="M11 16c-3-2-5-2-7-2 0 8 4 12 12 12 8 0 12-4 12-12-2 0-4 0-7 2M16 27v-3"/></svg></span><h3>Atendo você<br>com exclusividade</h3><p>Todo dia. Sem pausa. E ninguém pergunta como você tá por dentro.</p></div>
+          <div class="home-about__feature"><span class="home-about__icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16 3 6 7v8c0 7 4 11 10 14 6-3 10-7 10-14V7L16 3Z"/><path d="M12 16h8M16 12v8"/></svg></span><h3>Discrição total</h3><p>Atendimento reservado no Cambuí. Só você e eu, no seu tempo.</p></div>
+          <div class="home-about__feature"><span class="home-about__icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><path d="M16 27 5 16C-1 10 8 2 16 10c8-8 17 0 11 6L16 27Z"/></svg></span><h3>Foco no<br>seu bem-estar</h3><p>Aqui, você pode desacelerar e receber um cuidado atento.</p></div>
+        </div>
+        <div class="home-about__lower">
+          <div class="home-about__closing"><blockquote><span aria-hidden="true">“</span>Eu sei.<br>Sem cobrança, rotina, silêncio.<br>Você vive no automático.<br>Mas seu corpo sente.<br>Pede pausa — e ninguém escuta.</blockquote><p>Se seu corpo entendeu,<br><em>ele já decidiu.</em></p></div>
+          <div class="home-about__intro"><p>Sou <strong>Karol.</strong><br>A <strong>massagista profissional em Campinas, no Cambuí</strong>, que vai receber você com discrição, atenção e um atendimento individual. O que conversamos fica entre nós.</p><a href="https://wa.me/5519983732331" target="_blank" rel="noopener noreferrer" data-gtm-event="whatsapp_click" data-gtm-category="cta" data-gtm-label="sobre_agendar" class="home-about__cta"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.5 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20l1.2-4.7A8.5 8.5 0 1 1 20.5 11.5Z"/><path d="M8 8c.5 3.2 2.8 5.5 6 6l1.5-1.3 2 1.1c-.5 1.7-1.7 2.3-3.5 2.1-4.1-.5-7.2-3.7-7.7-7.7C6.1 6.4 6.7 5.2 8.4 4.7l1.1 2L8 8Z"/></svg><span>Falar com a Karol</span><span aria-hidden="true">→</span></a></div>
+        </div>
+      </div>
+    </div>
+  </section>`;
+
+  return html.replace(/<section id="sobre"[\s\S]*?<\/section>/, section).replace("</head>", `<style data-home-about-styles>
+    .home-about{position:relative;overflow:hidden;scroll-margin-top:96px;background:linear-gradient(90deg,#b99369 0%,#c4a17b 35%,#f8f4ee 37%,#fbf8f3 100%);color:#211713}
+    .home-about:after{content:"";position:absolute;right:-90px;top:-170px;width:460px;height:460px;border-radius:50%;background:radial-gradient(circle,#fff9 0%,transparent 70%);pointer-events:none}
+    .home-about__shell{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,38%) minmax(0,62%);width:min(100%,1440px);min-height:740px;margin:auto}
+    .home-about__visual{position:relative;display:flex;align-items:center;padding:42px 22px 42px max(28px,calc((100vw - 1360px)/2));background:linear-gradient(125deg,rgba(65,35,19,.43),transparent 55%)}
+    .home-about__visual:before{content:"";position:absolute;inset:30px 25px 30px 24px;border:1px solid #f7d99d;border-radius:46px 42px 24px 28px;transform:rotate(-2deg);pointer-events:none}
+    .home-about__portrait{position:relative;width:100%;height:650px;margin:0;overflow:hidden;border-radius:36px 36px 30px 30px;box-shadow:0 20px 48px rgba(43,23,10,.22)}
+    .home-about__portrait img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 45%}
+    .home-about__content{display:flex;flex-direction:column;justify-content:center;padding:48px max(38px,calc((100vw - 1360px)/2)) 48px 54px}
+    .home-about__eyebrow{display:flex;align-items:center;gap:12px;margin:0 0 18px;color:#a56d43;font:600 11px/1.3 Poppins,sans-serif;letter-spacing:.42em;text-transform:uppercase}
+    .home-about__eyebrow span{width:76px;height:1px;background:#dec5ac}
+    .home-about h2{max-width:780px;margin:0;color:#1d1512;font:700 clamp(48px,4.3vw,66px)/.98 Georgia,serif;letter-spacing:-.055em;text-wrap:balance}
+    .home-about h2 em,.home-about__closing>p em{color:#ad744c;font-style:italic}
+    .home-about__features{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:40px 0 32px}
+    .home-about__feature{padding:0 21px;border-left:1px solid #ede4da}
+    .home-about__feature:first-child{padding-left:0;border-left:0}
+    .home-about__feature:last-child{padding-right:0}
+    .home-about__icon{display:grid;width:60px;height:60px;margin-bottom:14px;place-items:center;border-radius:50%;background:linear-gradient(140deg,#f5dfc7,#f2cfaa);color:#985e34}
+    .home-about__icon svg{width:31px;height:31px;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+    .home-about__feature h3{min-height:39px;margin:0 0 8px;color:#2a211c;font:700 13px/1.25 Poppins,sans-serif;text-transform:uppercase}
+    .home-about__feature p{max-width:205px;margin:0;color:#605650;font:400 14px/1.5 Poppins,sans-serif}
+    .home-about__lower{display:grid;grid-template-columns:1.08fr .92fr;gap:30px;align-items:end}
+    .home-about__closing blockquote{position:relative;margin:0 0 18px;padding:20px 20px 19px 45px;border-radius:17px;background:linear-gradient(120deg,#f2ebe2,#f9f6f0);color:#51453e;font:italic 15px/1.5 Georgia,serif}
+    .home-about__closing blockquote:before{content:"";position:absolute;left:23px;top:26px;bottom:16px;width:1px;background:#c28c5b}
+    .home-about__closing blockquote>span{position:absolute;left:12px;top:-8px;color:#d9b792;font:italic 55px/1 Georgia,serif}
+    .home-about__closing>p{margin:0 0 0 17px;padding-top:12px;border-top:1px solid #ae7246;color:#261a15;font:700 25px/1.12 Georgia,serif}
+    .home-about__intro>p{margin:0 0 20px;color:#4f433e;font:400 14px/1.55 Poppins,sans-serif}
+    .home-about__intro strong{color:#2a1e19;font-weight:700}
+    .home-about__intro strong:first-child{color:#9b6037}
+    .home-about__cta{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:58px;padding:12px 20px;border:1px solid #e5b772;border-radius:999px;background:linear-gradient(110deg,#85502e,#70401f 70%,#a66536);box-shadow:0 9px 20px rgba(91,45,17,.24),inset 0 1px #e7ba7f;color:#fff;font:700 13px/1.2 Poppins,sans-serif;text-transform:uppercase;transition:transform .2s,box-shadow .2s}
+    .home-about__cta:hover{transform:translateY(-2px);box-shadow:0 13px 25px rgba(91,45,17,.28),inset 0 1px #e7ba7f}
+    .home-about__cta:focus-visible{outline:3px solid #a66c3d;outline-offset:3px}
+    .home-about__cta svg{width:23px;height:23px;stroke:#f7ddb5;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+    .home-about__cta span:last-child{font-size:23px;font-weight:400}
+    @media(max-width:1100px){.home-about__shell{grid-template-columns:40% 60%}.home-about__content{padding:42px 28px}.home-about__visual{padding:40px 16px 40px 28px}.home-about h2{font-size:clamp(42px,4.7vw,54px)}.home-about__features{margin:30px 0 25px}.home-about__feature{padding:0 12px}.home-about__feature p{font-size:13px}.home-about__lower{gap:18px}}
+    @media(max-width:850px){.home-about{background:#fbf8f3}.home-about__shell{display:block;min-height:0}.home-about__visual{padding:28px 24px;background:linear-gradient(125deg,#99704e,#d1ae84)}.home-about__visual:before{inset:18px 18px 19px}.home-about__portrait{height:min(80vw,580px)}.home-about__content{display:block;padding:48px 26px 62px}.home-about h2{font-size:clamp(41px,6vw,54px)}.home-about__features{margin:34px 0}.home-about__feature{padding:0 16px}}
+    @media(max-width:560px){.home-about__visual{padding:22px 22px 24px}.home-about__visual:before{inset:14px 14px 16px;border-radius:29px}.home-about__portrait{height:min(105vw,440px);border-radius:25px}.home-about__portrait img{object-position:center 44%}.home-about__content{padding:38px 20px 54px}.home-about h2{font-size:clamp(35px,10vw,46px);line-height:1.03}.home-about__features{grid-template-columns:1fr;gap:17px;margin:30px 0}.home-about__feature,.home-about__feature:first-child{display:grid;grid-template-columns:52px 1fr;column-gap:15px;align-items:start;padding:0 0 16px;border:0;border-bottom:1px solid #eee2d7}.home-about__feature:last-child{border-bottom:0}.home-about__icon{grid-row:span 2;margin:0}.home-about__feature h3{min-height:0;font-size:12px}.home-about__feature p{max-width:none;font-size:13px;line-height:1.5}.home-about__lower{grid-template-columns:1fr;gap:24px}.home-about__closing blockquote{font-size:14px}.home-about__closing>p{font-size:23px}.home-about__intro>p{font-size:14px;line-height:1.6}.home-about__cta{min-height:55px;font-size:12px}}
+  </style></head>`);
+}
+
+function refineLocalPageStructure(html: string, route: string) {
+  if (route === "/") {
+    const services = [
+      { letter: "T", name: "Massagem Tântrica", description: "Toque consciente e atenção ao ritmo da sessão em um atendimento reservado no Cambuí.", href: "/massagem-tantrica-campinas/", image: "/imagens/meu-espaco/ambiente-massagem-tantrica-campinas-1.webp", width: 713, height: 572, alt: "Sala preparada para massagem tântrica no Cambuí" },
+      { letter: "N", name: "Massagem Nuru", description: "Experiência sensorial com gel e movimentos de deslizamento, realizada com privacidade e horário marcado.", href: "/massagem-nuru-campinas/", image: "/imagens/meu-espaco/sala-massagem-nuru-campinas-3.webp", width: 340, height: 445, alt: "Ambiente privativo para massagem Nuru em Campinas" },
+      { letter: "S", name: "Massagem Sensual", description: "Uma sessão de toque envolvente, com proposta explicada antes e espaço para tirar dúvidas.", href: "/massagem-sensual-campinas/", image: "/imagens/meu-espaco/espaco-privativo-massagem-campinas-2.webp", width: 551, height: 515, alt: "Espaço reservado para massagem sensual em Campinas" },
+      ...additionalServices,
+    ];
+    const cards = services.map((service) => `<article class="home-service-card">
+      <div class="home-service-card__heading"><span class="home-service-card__icon">${serviceIcon(service.name)}</span><h3><a href="${service.href}">${service.name} em Campinas</a></h3></div>
+      <p>${service.description}</p>
+    </article>`).join("");
+    html = html.replace(/<section id="servicos"[\s\S]*?<\/section>/, `<section id="servicos" class="home-services" aria-labelledby="home-services-title">
+      <div class="home-section-shell"><div class="home-section-heading"><p class="home-section-kicker">Massagens no Cambuí</p><h2 id="home-services-title">Encontre a massagem em Campinas ideal para o seu momento</h2><p>Conheça as modalidades oferecidas pela Karol em um espaço privativo no Cambuí. Cada página explica a proposta da sessão e responde às dúvidas mais comuns antes do contato.</p></div>
+      <div class="home-services__grid">${cards}</div></div>
+    </section>`);
+    html = html.replace(/<section id="espaco"[\s\S]*?<\/section>/, `<section id="espaco" class="home-space" aria-labelledby="home-space-title">
+      <div class="home-section-shell home-space__heading"><div><p class="home-section-kicker">O ambiente</p><h2 id="home-space-title">Conheça o espaço de massagem no Cambuí</h2></div><p>Um ambiente reservado e climatizado em Campinas, preparado para receber você com horário marcado. As fotos mostram detalhes reais da sala.</p></div>
+      <div class="home-space__gallery" aria-label="Fotos do espaço de atendimento">
+        <img src="/imagens/meu-espaco/ambiente-massagem-tantrica-campinas-1.webp" alt="Maca preparada no espaço de massagem no Cambuí" width="713" height="572" loading="lazy" decoding="async">
+        <img src="/imagens/meu-espaco/espaco-privativo-massagem-campinas-2.webp" alt="Detalhes da sala privativa de atendimento" width="551" height="515" loading="lazy" decoding="async">
+        <img src="/imagens/meu-espaco/sala-massagem-nuru-campinas-3.webp" alt="Sala utilizada nas sessões de massagem Nuru" width="340" height="445" loading="lazy" decoding="async">
+        <img src="/imagens/meu-espaco/ambiente-discreto-massagem-campinas-4.webp" alt="Ambiente discreto para massagens em Campinas" width="665" height="567" loading="lazy" decoding="async">
+      </div><div class="home-section-shell home-space__footer"><p>Atendimento individual, contato direto e orientações de chegada após a confirmação do horário.</p><a class="home-section-link" href="/galeria/">Ver a galeria completa <span aria-hidden="true">↗</span></a></div>
+    </section>`);
+    html = html.replace("</head>", `<style data-home-sections-styles>
+      .home-services{padding:100px 0;background:#f7f0e8;color:#33231c}.home-section-shell{width:min(100% - 48px,1280px);margin:auto}.home-section-heading{max-width:760px;margin:0 auto 46px;text-align:center}.home-section-kicker{margin:0 0 12px;color:#93633f;font:700 12px/1.4 Poppins,sans-serif;letter-spacing:.15em;text-transform:uppercase}.home-section-heading h2,.home-space h2{margin:0;color:#312019;font:800 clamp(32px,3.4vw,48px)/1.13 Montserrat,sans-serif;letter-spacing:-.04em}.home-section-heading>p:last-child,.home-space__heading>p{margin:20px 0 0;color:#5e514b;font:400 16px/1.7 Poppins,sans-serif}.home-services__grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px}.home-service-card{display:flex;flex-direction:column;min-width:0;padding:22px;border:1px solid #e8dcd0;border-radius:24px;background:#fff;box-shadow:0 12px 32px rgba(56,32,19,.06);transition:transform .2s,box-shadow .2s}.home-service-card:hover{transform:translateY(-4px);box-shadow:0 18px 36px rgba(56,32,19,.12)}.home-service-card__top{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}.home-service-card__icon{display:grid;width:42px;height:42px;place-items:center;border-radius:12px;background:#e8c7a3;color:#4b2c1d;font:800 19px Montserrat,sans-serif}.home-service-card__arrow{color:#93633f;font:700 25px/1 Poppins,sans-serif}.home-service-card h3{min-height:70px;margin:0 0 16px;color:#312019;font:700 19px/1.28 Montserrat,sans-serif}.home-service-card h3 a:hover{text-decoration:underline;text-underline-offset:3px}.home-service-card>p{min-height:110px;margin:0 0 20px;padding-top:16px;border-top:1px solid #efe7df;color:#5e514b;font:400 13px/1.65 Poppins,sans-serif}.home-service-card__image{display:block;aspect-ratio:4/3;overflow:hidden;margin-top:auto;border-radius:16px}.home-service-card__image img{width:100%;height:100%;object-fit:cover;transition:transform .3s}.home-service-card:hover img{transform:scale(1.04)}.home-section-link{display:inline-flex;align-items:center;gap:12px;margin-top:32px;color:#75482e;font:700 14px/1.5 Poppins,sans-serif;text-decoration:underline;text-underline-offset:5px}.home-services .home-section-link{width:100%;justify-content:center}.home-section-link span{font-size:20px}.home-space{padding:92px 0 100px;background:#fff}.home-space__heading{display:grid;grid-template-columns:1fr 1fr;align-items:end;gap:60px;margin-bottom:36px}.home-space__heading>p{margin:0}.home-space__gallery{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;width:min(100% - 32px,1440px);margin:auto}.home-space__gallery img{display:block;width:100%;height:300px;object-fit:cover}.home-space__footer{display:flex;align-items:center;justify-content:space-between;gap:30px}.home-space__footer p{max-width:600px;margin:26px 0 0;color:#5e514b;font:400 15px/1.6 Poppins,sans-serif}
+      @media(max-width:1023px){.home-services__grid{grid-template-columns:repeat(2,minmax(0,1fr))}.home-space__gallery img{height:250px}}
+      @media(max-width:767px){.home-services{padding:72px 0}.home-section-shell{width:min(100% - 40px,600px)}.home-section-heading{text-align:left;margin-bottom:30px}.home-section-heading h2,.home-space h2{font-size:32px}.home-services__grid{grid-template-columns:1fr;gap:16px}.home-service-card{padding:20px}.home-service-card h3,.home-service-card>p{min-height:0}.home-service-card__image{aspect-ratio:16/9}.home-space{padding:72px 0}.home-space__heading{display:block;margin-bottom:28px}.home-space__heading>p{margin-top:16px}.home-space__gallery{display:flex;gap:8px;width:100%;padding:0 20px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding:20px}.home-space__gallery img{flex:0 0 74vw;width:74vw;height:260px;scroll-snap-align:start}.home-space__footer{display:block}.home-space__footer p{margin-top:22px}}
+    </style></head>`);
+  }
+
+  if (commercialPages[route]) {
+    html = html.replace(/<h4\b([^>]*)>/g, "<h3$1>").replace(/<\/h4>/g, "</h3>");
+    html = html.replace(/<h3\b([^>]*)>(Benefícios da Sessão|O que você vai sentir\?|Destaques da Vivência|Benefícios Reais|Destaques da Sessão)<\/h3>/, "<h2$1>$2</h2>");
+    html = html.replace(/<h3\b([^>]*)>Explore também:<\/h3>/, "<h2$1>Outras massagens em Campinas</h2>");
+    html = html.replace('href="/#servicos"', 'href="/servicos/"');
+    if (route === "/massagem-4-maos-campinas/") html = html.replace(/<h1\b([^>]*)>[\s\S]*?<\/h1>/, '<h1$1>Massagem 4 mãos em Campinas, no Cambuí</h1>');
+    if (route === "/massagem-tantrica-campinas/") html = html.replace("Uma jornada profunda de autoconhecimento, cura emocional e expansão da sensibilidade em um ambiente de total entrega e discrição no Cambuí.", "Uma sessão de toque consciente e atenção à percepção corporal, em ambiente privativo no Cambuí. Conheça a proposta e tire suas dúvidas antes de marcar.");
+    if (route === "/massagem-lingam-campinas/") html = html.replace("O Ritual da Cura Masculina", "Como funciona a Massagem Lingam");
+  }
+
+  if (route === "/servicos/") {
+    html = html.replace(/<h1\b([^>]*)>[\s\S]*?<\/h1>/, '<h1$1>Massagens em Campinas: conheça as modalidades da Karol</h1>');
+    html = html.replace("Escolha a terapia que mais ressoa com o seu momento. Atendimento premium no coração do Cambuí.", "Compare as massagens tântrica, Nuru, sensual, Lingam e 4 mãos oferecidas no Cambuí. Conheça cada proposta antes de consultar os horários disponíveis.");
+    html = html.replace(/(<section class="pb-24"><div class="max-w-7xl mx-auto px-6 lg:px-8">)/, '$1<h2 class="font-montserrat font-bold text-2xl md:text-3xl text-stone-900 mb-8">Escolha a experiência de massagem no Cambuí</h2>');
+  }
+  return html;
+}
+
+function refineRegionalLandingCopy(html: string, route: string) {
+  const replacements: Record<string, Array<[string, string]>> = {
+    "/massagem-sensual-valinhos/": [
+      ["MASSAGEM SENSUAL EM VALINHOS", "MASSAGEM SENSUAL PARA CLIENTES DE VALINHOS"],
+      ["Apenas 15 minutos separam Valinhos de uma experiência sensorial completamente diferente. Meu estúdio no Cambuí é o destino de quem busca discrição absoluta fora da sua rotina diária.", "Quem mora em Valinhos e procura massagem sensual encontra atendimento privativo no Cambuí, em Campinas. O contato é feito diretamente pelo WhatsApp e o horário é reservado antes do deslocamento."],
+      ["Muitos clientes de Valinhos escolhem meu espaço no Cambuí justamente pela privacidade de estar em outra cidade. Aqui, você desfruta de um ambiente nobre sem o risco de ser reconhecido em sua rotina local.", "O atendimento fora da cidade de origem pode ser uma escolha para quem valoriza discrição. No Cambuí, a sessão acontece em ambiente reservado e sem recepção compartilhada."],
+      ["O Cambuí é o bairro mais sofisticado de Campinas, oferecendo o cenário perfeito para um reset mental. Em apenas 15 minutos de deslocamento, você troca o estresse diário por um refúgio de alto luxo e prazer sensorial.", "O Cambuí é uma região central de Campinas, com acesso por vias importantes e estrutura de comércio e serviços no entorno. O tempo de deslocamento varia conforme o ponto de saída e o trânsito."],
+      ["O acesso via Rodovia Magalhães Teixeira ou Av. Mackenzie é imediato. Em menos de 15 minutos, você estaciona em uma rua calma do Cambuí, garantindo uma entrada e saída totalmente discretas e seguras.", "Para quem vem de Valinhos, o acesso pode ser feito pela Rodovia Magalhães Teixeira e pela região da Avenida Mackenzie. Confirme a rota antes de sair e solicite as orientações do local no agendamento."],
+    ],
+    "/massagem-sensual-sumare/": [
+      ["MASSAGEM SENSUAL EM SUMARÉ", "MASSAGEM SENSUAL PARA CLIENTES DE SUMARÉ"],
+      ["Apenas 15 minutos separam Sumaré de um refúgio de luxo absoluto. Meu estúdio no Cambuí é o destino de quem valoriza o sigilo total de ser atendido fora de sua zona habitual de convivência.", "Clientes de Sumaré que procuram massagem sensual podem agendar atendimento no Cambuí, em Campinas. A disponibilidade e as orientações de chegada são confirmadas diretamente pelo WhatsApp."],
+      ["Para os moradores de Sumaré, o deslocamento até o Cambuí é mais do que uma viagem: é uma escolha estratégica por privacidade. Ser atendido em um bairro nobre de outra cidade garante que sua experiência seja vivida com total liberdade e sem o risco de encontros indesejados.", "Escolher um atendimento fora da cidade de origem pode oferecer mais discrição para algumas pessoas. A sessão é realizada com horário reservado e sem circulação de outros clientes no mesmo momento."],
+      ["Meu espaço foi projetado para oferecer o máximo em sofisticação e conforto. A massagem sensual utiliza manobras envolventes que resetam o sistema nervoso, proporcionando um relaxamento difícil de encontrar na rotina comum de Sumaré.", "O espaço é preparado para conforto e privacidade. A massagem sensual utiliza movimentos envolventes e ritmo combinado para proporcionar uma pausa da rotina, sem promessas terapêuticas ou médicas."],
+      ["O trajeto de Sumaré ao Cambuí é rápido e direto pela Via Anhanguera. Muitos clientes aproveitam esse curto intervalo de 15 minutos para mentalizar o relaxamento que está por vir, em um ambiente onde o sigilo é a regra máxima.", "O acesso de Sumaré a Campinas costuma utilizar a Via Anhanguera. Como o tempo varia conforme trânsito e ponto de saída, consulte a rota no dia e solicite o endereço somente após confirmar o horário."],
+    ],
+    "/massagem-sensual-hortolandia/": [
+      ["MASSAGEM SENSUAL EM HORTOLÂNDIA", "MASSAGEM SENSUAL PARA CLIENTES DE HORTOLÂNDIA"],
+      ["A menos de 20 minutos de Hortolândia, o bairro Cambuí em Campinas oferece o refúgio perfeito para quem busca massagem sensual premium com o máximo de discrição e sigilo.", "Quem mora em Hortolândia pode consultar atendimento de massagem sensual no Cambuí, em Campinas. A sessão é marcada com antecedência e as orientações de chegada são enviadas de forma reservada."],
+      ["Muitos clientes de Hortolândia optam pelo atendimento no Cambuí justamente para garantir total privacidade. Deslocar-se para um bairro nobre em outra cidade permite que você se desligue completamente da rotina sem o receio de ser reconhecido.", "Para algumas pessoas, deslocar-se até outra cidade ajuda a preservar a discrição. No Cambuí, o atendimento ocorre em ambiente privativo e com contato direto, sem recepção compartilhada."],
+      ["Meu estúdio é um oásis de tranquilidade. Através de técnicas sensoriais avançadas, proporciono um relaxamento profundo que remove as tensões do dia a dia, em um ambiente onde o seu anonimato é preservado com rigor.", "O ambiente é preparado para conforto, higiene e privacidade. Antes de agendar, você pode entender a proposta da massagem sensual e esclarecer dúvidas sobre a experiência."],
+      ["Pela Rodovia SP-101 ou pela Lix da Cunha, você chega ao meu estúdio em menos de 20 minutos. Esse curto trajeto é a sua ponte para um momento de prazer exclusivo, longe da correria de Hortolândia e com a segurança de um local discreto.", "O deslocamento pode utilizar a Rodovia SP-101 e a Avenida Lix da Cunha, dependendo do ponto de saída. Verifique o trânsito e a melhor rota no dia do atendimento."],
+    ],
+  };
+
+  let output = html;
+  for (const [from, to] of replacements[route] ?? []) {
+    output = output.replaceAll(from, to);
+  }
+  return output;
+}
+
+function normalizeInternalLinks(html: string) {
+  return html.replaceAll('href="/massagista-em-campinas/"', 'href="/"').replace(/href="\/([^"#?]*)(([#?][^"]*)?)"/g, (match, pathPart: string, suffix: string) => {
+    if (!pathPart || pathPart.endsWith("/") || pathPart.includes(".") || pathPart.startsWith("_astro/")) {
+      return match;
+    }
+    return `href="/${pathPart}/${suffix}"`;
+  });
+}
+
+function getDefaultWhatsappText(route: string) {
+  if (pageMessages[route]) return pageMessages[route];
+  if (route.startsWith("/blog/")) {
+    return "Ola, Karol. Vim pelo site e gostaria de tirar uma duvida antes de agendar.";
+  }
+  return "Ola, Karol. Vim pelo site e gostaria de consultar horarios disponiveis.";
+}
+
+function updateWhatsappLinks(html: string, route: string, text: string) {
+  const encodedText = encodeURIComponent(text);
+  const label = route === "/" ? "home" : route.replaceAll("/", "_").replace(/^_|_$/g, "");
+  const href = `https://wa.me/5519983732331?text=${encodedText}&utm_source=site&utm_medium=whatsapp&utm_campaign=${encodeURIComponent(label)}`;
+
+  return html.replace(/href="https:\/\/wa\.me\/5519983732331[^"]*"/g, `href="${href}"`);
+}
+
+function updateCtaLabels(html: string) {
+  return html
+    .replace(/>Agendar Agora</g, ">Consultar horários<")
+    .replace(/>Agendar</g, ">Consultar horários<")
+    .replace(/>AGENDAR</g, ">CONSULTAR HORÁRIOS<")
+    .replace(/>agendar</g, ">consultar horários<")
+    .replace(/Agendar no Cambu[^<"]*/g, "Consultar horários")
+    .replace(/Agende pelo WhatsApp/g, "Consulte horários pelo WhatsApp")
+    .replace(/Agende agora/g, "Consulte horários");
+}
+
+function replaceTitle(html: string, title: string) {
+  const escaped = escapeHtml(title);
+  return html
+    .replace(/<title>.*?<\/title>/i, `<title>${escaped}</title>`)
+    .replace(/<meta property="og:title" content="[^"]*"/i, `<meta property="og:title" content="${escaped}"`)
+    .replace(/<meta name="twitter:title" content="[^"]*"/i, `<meta name="twitter:title" content="${escaped}"`);
+}
+
+function replaceDescription(html: string, description: string) {
+  const escaped = escapeHtml(description);
+  return html
+    .replace(/<meta name="description" content="[^"]*"/i, `<meta name="description" content="${escaped}"`)
+    .replace(/<meta property="og:description" content="[^"]*"/i, `<meta property="og:description" content="${escaped}"`)
+    .replace(/<meta name="twitter:description" content="[^"]*"/i, `<meta name="twitter:description" content="${escaped}"`);
+}
+
+function ensureSocialMetadata(html: string) {
+  const title = html.match(/<title>([^<]*)<\/title>/i)?.[1] ?? "Karol Massagista";
+  const description = html.match(/<meta name="description" content="([^"]*)"/i)?.[1] ?? "";
+  const image = html.match(/<meta property="og:image" content="([^"]*)"/i)?.[1]
+    ?? "https://karolmassagista.com.br/imagens/hero/karol-massagista-tantrica-hero-campinas-v2.webp";
+  const missing: string[] = [];
+
+  if (!/<meta property="og:image"/i.test(html)) missing.push(`<meta property="og:image" content="${image}">`);
+  if (!/<meta property="og:image:width"/i.test(html)) missing.push('<meta property="og:image:width" content="387">');
+  if (!/<meta property="og:image:height"/i.test(html)) missing.push('<meta property="og:image:height" content="514">');
+  if (!/<meta property="og:image:alt"/i.test(html)) missing.push('<meta property="og:image:alt" content="Karol Massagista em Campinas">');
+  if (!/<meta name="twitter:card"/i.test(html)) missing.push('<meta name="twitter:card" content="summary_large_image">');
+  if (!/<meta name="twitter:title"/i.test(html)) missing.push(`<meta name="twitter:title" content="${title}">`);
+  if (!/<meta name="twitter:description"/i.test(html)) missing.push(`<meta name="twitter:description" content="${description}">`);
+  if (!/<meta name="twitter:image"/i.test(html)) missing.push(`<meta name="twitter:image" content="${image}">`);
+
+  return html
+    .replace(/(<meta property="og:image:width" content=")[^"]*/i, (_match, prefix) => `${prefix}387`)
+    .replace(/(<meta property="og:image:height" content=")[^"]*/i, (_match, prefix) => `${prefix}514`)
+    .replace("</head>", `${missing.join("")}</head>`);
+}
+
+function replaceCanonical(html: string, route: string) {
+  return html.replace(/<link rel="canonical" href="[^"]*"/i, `<link rel="canonical" href="https://karolmassagista.com.br${route}"`);
+}
+
+function replaceOgUrl(html: string, route: string) {
+  return html.replace(/<meta property="og:url" content="[^"]*"/i, `<meta property="og:url" content="https://karolmassagista.com.br${route}"`);
+}
+
+function applyIndexingRules(html: string, route: string) {
+  if (route !== "/404/") return html;
+
+  if (/<meta name="robots" content="[^"]*"/i.test(html)) {
+    return html.replace(/<meta name="robots" content="[^"]*"/i, '<meta name="robots" content="noindex, follow"');
+  }
+
+  return html.replace("</head>", '<meta name="robots" content="noindex, follow"></head>');
+}
+
+function injectEnhancementStyles(html: string) {
+  if (html.includes("data-seo-conversion-styles")) return html;
+
+  const styles = `<style data-seo-conversion-styles>
+    #inicio{min-height:100svh;overflow-anchor:none}
+    #inicio .max-w-7xl{min-height:calc(100svh - 8rem)}
+    @media (min-width:1024px){#inicio .max-w-7xl{min-height:100svh;display:flex;align-items:center}}
+    .seo-conversion{background:#fff;border-top:1px solid rgba(39,31,26,.10);border-bottom:1px solid rgba(39,31,26,.10);padding:42px 18px;margin:0 auto}
+    .seo-conversion__inner{max-width:980px;margin:0 auto;display:grid;gap:22px}
+    .seo-conversion__eyebrow{font:700 12px/1.2 Poppins,Arial,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#9b6a3f;margin:0 0 8px}
+    .seo-conversion__title{font:800 clamp(26px,4vw,42px)/1.08 Montserrat,Arial,sans-serif;color:#241a15;margin:0}
+    .seo-conversion__text{font:400 16px/1.7 Poppins,Arial,sans-serif;color:#5f554e;margin:0;max-width:760px}
+    .seo-conversion__links{display:flex;flex-wrap:wrap;gap:10px;margin-top:4px}
+    .seo-conversion__links a{border:1px solid rgba(155,106,63,.25);border-radius:999px;padding:10px 14px;color:#5c3925;background:#fffdf9;text-decoration:none;font:700 13px/1 Poppins,Arial,sans-serif}
+    .seo-conversion__actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+    .seo-conversion__button{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;background:#1f8f4d;color:#fff!important;text-decoration:none;padding:15px 22px;font:800 15px/1 Poppins,Arial,sans-serif;box-shadow:0 14px 28px rgba(31,143,77,.22)}
+    .seo-conversion__note{font:600 13px/1.5 Poppins,Arial,sans-serif;color:#756a62}
+    .seo-faq{background:#fffaf3;padding:44px 18px;border-top:1px solid rgba(155,106,63,.12)}
+    .seo-faq__inner{max-width:920px;margin:0 auto}
+    .seo-faq h2{font:800 clamp(24px,4vw,38px)/1.12 Montserrat,Arial,sans-serif;color:#241a15;margin:0 0 18px}
+    .seo-faq details{background:#fff;border:1px solid rgba(155,106,63,.18);border-radius:14px;margin:10px 0;padding:16px 18px;box-shadow:0 8px 22px rgba(84,57,32,.06)}
+    .seo-faq summary{cursor:pointer;font:800 15px/1.35 Poppins,Arial,sans-serif;color:#3c2b22}
+    .seo-faq p{font:400 15px/1.65 Poppins,Arial,sans-serif;color:#5f554e;margin:12px 0 0}
+    .seo-depth{background:#fff;padding:54px 18px}
+    .seo-depth__inner{max-width:1080px;margin:0 auto;display:grid;gap:26px}
+    .seo-depth h2{font:800 clamp(25px,4vw,40px)/1.12 Montserrat,Arial,sans-serif;color:#241a15;margin:0}
+    .seo-depth p,.seo-depth li{font:400 16px/1.72 Poppins,Arial,sans-serif;color:#5f554e}
+    .seo-depth p{margin:0;max-width:820px}
+    .seo-depth__media{display:grid;grid-template-columns:minmax(220px,360px) minmax(0,1fr);gap:20px;align-items:end;margin:0;padding:18px;border:1px solid rgba(155,106,63,.14);border-radius:22px;background:#fffaf3}
+    .seo-depth__media img{width:100%;max-height:360px;object-fit:cover;border-radius:16px}
+    .seo-depth__media figcaption{font:600 13px/1.6 Poppins,Arial,sans-serif;color:#756a62;padding:6px 4px}
+    .seo-depth__grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .seo-depth__card{background:#fffaf3;border:1px solid rgba(155,106,63,.14);border-radius:18px;padding:20px}
+    .seo-depth__card h3{font:800 17px/1.25 Poppins,Arial,sans-serif;color:#3c2b22;margin:0 0 8px}
+    .seo-depth__card p{font-size:14px;line-height:1.65}
+    .seo-depth__links{display:flex;flex-wrap:wrap;gap:10px}
+    .seo-depth__links a{border-radius:999px;background:#241a15;color:#fff!important;text-decoration:none;padding:11px 15px;font:800 13px/1 Poppins,Arial,sans-serif}
+    @media (max-width: 767px){.seo-depth{padding:42px 16px}.seo-depth__grid{grid-template-columns:1fr}.seo-depth__media{grid-template-columns:1fr}.seo-depth__media img{max-height:420px}}
+    .seo-mobile-whatsapp{position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;display:none;align-items:center;justify-content:space-between;gap:12px;padding:10px 12px;border-radius:18px;background:#fff;color:#241a15;box-shadow:0 16px 40px rgba(0,0,0,.18);border:1px solid rgba(36,26,21,.08)}
+    .seo-mobile-whatsapp__copy{display:flex;flex-direction:column;gap:2px;min-width:0}
+    .seo-mobile-whatsapp__copy strong{font:800 13px/1.2 Poppins,Arial,sans-serif;color:#241a15}
+    .seo-mobile-whatsapp__copy span{font:600 11px/1.25 Poppins,Arial,sans-serif;color:#756a62;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .seo-mobile-whatsapp__button{flex:0 0 auto;border-radius:999px;background:#25d366;color:#fff!important;text-decoration:none;padding:12px 14px;font:900 13px/1 Poppins,Arial,sans-serif}
+    section.bg-cream-100 .text-stone-500,section.bg-background .text-stone-500{color:#685f59!important}
+    section.bg-cream-100 .text-stone-400,section.bg-background .text-stone-400{color:#685f59!important}
+    section#depoimentos .text-gray-400{color:#625b56!important}
+    section#depoimentos span.text-stone-400{color:#625b56!important;opacity:1!important;animation:none!important}
+    .animate-fade-in,.animate-fade-in-up{animation:none!important;opacity:1!important;transform:none!important}
+    footer .text-stone-600,footer .text-stone-500,footer .text-stone-400{color:#c7c0bb!important}
+    footer a[href="/depoimentos/"]{color:#ead8c7!important}
+    .seo-mobile-whatsapp__button{background:#087f36}
+    @media (max-width: 767px){body{padding-bottom:82px}.seo-mobile-whatsapp{display:flex}.fixed.bottom-6.right-6{display:none!important}.seo-conversion{padding:34px 16px}.seo-conversion__actions{align-items:stretch}.seo-conversion__button{width:100%}}
+  </style>`;
+
+  return html.replace("</head>", `${styles}</head>`);
+}
+
+function injectCommercialDepthSection(html: string, route: string, serviceName: string) {
+  if (html.includes("data-seo-depth-commercial")) return html;
+
+  const content = commercialDepthContent[route];
+  const comparisonLinks = getComparisonLinks(route);
+  const cards = (content?.cards ?? [
+    { title: "Ambiente privativo", text: "Atendimento com horário marcado no Cambuí, pensado para quem valoriza discrição e conforto." },
+    { title: "Escolha orientada", text: "O primeiro contato ajuda a entender a modalidade e esclarecer dúvidas antes de marcar." },
+    { title: "Foco local", text: "Atendimento em Campinas, no Cambuí, com acesso às principais modalidades disponíveis." },
+  ]).map((card) => `<div class="seo-depth__card"><h3>${escapeHtml(card.title)}</h3><p>${escapeHtml(card.text)}</p></div>`).join("");
+  const media = content ? `<figure class="seo-depth__media"><img src="${content.image}" alt="${escapeHtml(content.imageAlt)}" loading="lazy" decoding="async"><figcaption>Ambiente e experiência de atendimento no Cambuí, em Campinas.</figcaption></figure>` : "";
+  const section = `<section class="seo-depth" data-seo-depth-commercial>
+    <div class="seo-depth__inner">
+      <h2>${escapeHtml(content?.heading ?? `Como escolher ${serviceName} em Campinas`)}</h2>
+      <p>${escapeHtml(content?.intro ?? "Uma boa experiência começa com ambiente reservado, comunicação clara e expectativas alinhadas antes do agendamento.")}</p>
+      ${media}
+      <div class="seo-depth__grid">${cards}</div>
+      <div class="seo-depth__links">${comparisonLinks}</div>
+    </div>
+  </section>`;
+
+  return html.includes("</main>") ? html.replace("</main>", `${section}</main>`) : html.replace("</footer>", `${section}</footer>`);
+}
+
+function getComparisonLinks(route: string) {
+  const links = [
+    ["/servicos/", "Ver todos os serviços"],
+    ["/massagem-tantrica-campinas/", "Massagem Tântrica"],
+    ["/massagem-nuru-campinas/", "Massagem Nuru"],
+    ["/massagem-sensual-campinas/", "Massagem Sensual"],
+    ["/massagem-lingam-campinas/", "Massagem Lingam"],
+    ["/massagem-4-maos-campinas/", "Massagem 4 Mãos"],
+  ].filter(([href]) => href !== route);
+
+  return links.map(([href, label]) => `<a href="${href}">${label}</a>`).join("");
+}
+
+function injectServicesHubSection(html: string) {
+  if (html.includes("data-seo-services-hub")) return html;
+
+  const section = `<section class="seo-depth" data-seo-services-hub>
+    <div class="seo-depth__inner">
+      <h2>Escolha a massagem ideal em Campinas</h2>
+      <p>A página de serviços funciona como o ponto central para entender as principais experiências disponíveis. Cada modalidade tem uma intenção diferente: relaxar, explorar sensações, aliviar tensão, trabalhar autoconhecimento masculino ou viver uma experiência mais intensa.</p>
+      <div class="seo-depth__grid">
+        <div class="seo-depth__card"><h3>Tântrica ou sensual?</h3><p>A tântrica costuma ser procurada por quem busca consciência corporal e relaxamento profundo. A sensual atende quem procura uma experiência mais envolvente e direta.</p></div>
+        <div class="seo-depth__card"><h3>Nuru ou Lingam?</h3><p>A Nuru trabalha contato corporal e deslizamento com gel. A Lingam é mais voltada para sensibilidade masculina, presença e bem-estar.</p></div>
+        <div class="seo-depth__card"><h3>Atendimento privado</h3><p>Para buscas locais em Campinas, o diferencial está no sigilo, ambiente reservado no Cambuí e conversa prévia pelo WhatsApp.</p></div>
+      </div>
+      <div class="seo-depth__links">
+        <a href="/massagem-tantrica-campinas/">Massagem Tântrica em Campinas</a>
+        <a href="/massagem-nuru-campinas/">Massagem Nuru em Campinas</a>
+        <a href="/massagem-sensual-campinas/">Massagem Sensual em Campinas</a>
+        <a href="/">Massagista em Campinas</a>
+        <a href="/massagem-sensual-hortolandia/">Atendimento para Hortolândia</a>
+        <a href="/massagem-sensual-sumare/">Atendimento para Sumaré</a>
+        <a href="/massagem-sensual-valinhos/">Atendimento para Valinhos</a>
+      </div>
+    </div>
+  </section>`;
+
+  return html.replace("</main>", `${section}</main>`);
+}
+
+function injectBlogIndexLinks(html: string) {
+  if (html.includes("data-seo-blog-index")) return html;
+
+  const articles = [
+    ["/blog/como-apimentar-relacao-tantra/", "Como melhorar a conexão do casal"],
+    ["/blog/comunicacao-nao-verbal-toque/", "Comunicação não verbal e toque"],
+    ["/blog/guia-massagem-lingam-campinas/", "Guia de Massagem Lingam"],
+    ["/blog/guia-relaxamento-pos-trabalho-campinas/", "Relaxamento pós-trabalho em Campinas"],
+    ["/blog/liberacao-miofascial-vs-tantrica/", "Miofascial ou tântrica?"],
+    ["/blog/massagem-prostatica-saude/", "Saúde masculina e cuidados"],
+    ["/blog/massagem-sensual-casais-dicas/", "Massagem sensual para casais"],
+    ["/blog/melhores-spas-vs-atendimento-privado/", "Spa ou atendimento privado?"],
+    ["/blog/turismo-bem-estar-rmc/", "Bem-estar na região de Campinas"],
+    ["/blog/yoga-e-tantra-conexao/", "Yoga, respiração e Tantra"],
+  ];
+  const links = articles.map(([href, label]) => `<a href="${href}">${label}</a>`).join("");
+  const section = `<section class="seo-depth" data-seo-blog-index>
+    <div class="seo-depth__inner">
+      <h2>Mais guias sobre massagem e bem-estar</h2>
+      <p>Continue pelos conteúdos que explicam técnicas, cuidados, diferenças entre experiências e opções de atendimento em Campinas e região.</p>
+      <div class="seo-depth__links">${links}</div>
+    </div>
+  </section>`;
+
+  return html.replace("</main>", `${section}</main>`);
+}
+
+function injectLocalLandingSection(html: string, config: (typeof localLandingPages)[string]) {
+  if (html.includes("data-seo-local-landing")) return html;
+
+  const section = `<main class="seo-depth" data-seo-local-landing>
+    <div class="seo-depth__inner">
+      <h1>${escapeHtml(config.headline)}</h1>
+      <p>${escapeHtml(config.intro)}</p>
+      <div class="seo-depth__grid">
+        <div class="seo-depth__card"><h3>Serviços principais</h3><p>Massagem tântrica, Nuru, sensual, Lingam e 4 mãos em Campinas, com páginas específicas para cada busca.</p></div>
+        <div class="seo-depth__card"><h3>Região de atendimento</h3><p>Atendimento em Campinas, na região do Cambuí, com acesso fácil para quem vem de bairros centrais e cidades próximas.</p></div>
+        <div class="seo-depth__card"><h3>Antes de agendar</h3><p>O WhatsApp pode ser usado apenas para consultar horários, tirar dúvidas e entender qual massagem escolher.</p></div>
+      </div>
+      <div class="seo-depth__links">
+        <a href="/servicos/">Ver serviços</a>
+        <a href="/massagem-tantrica-campinas/">Massagem Tântrica</a>
+        <a href="/massagem-nuru-campinas/">Massagem Nuru</a>
+        <a href="/massagem-sensual-campinas/">Massagem Sensual</a>
+      </div>
+    </div>
+  </main>`;
+
+  if (/<main[\s\S]*?<\/main>/i.test(html)) {
+    return html.replace(/<main[\s\S]*?<\/main>/i, section);
+  }
+
+  if (/<section id="inicio"[\s\S]*?<\/section>/i.test(html)) {
+    return html.replace(/<section id="inicio"[\s\S]*?<\/section>/i, section);
+  }
+
+  return html.replace("</nav>", `</nav>${section}`);
+}
+
+function injectBlogRecoverySection(html: string, route: string) {
+  if (html.includes("data-seo-blog-recovery")) return html;
+
+  const related = getRelatedServiceLinks(route);
+  const section = `<section class="seo-depth" data-seo-blog-recovery>
+    <div class="seo-depth__inner">
+      <h2>Continue pelo serviço relacionado</h2>
+      <p>Este conteúdo ajuda a entender a experiência, mas a página de serviço mostra detalhes práticos sobre atendimento em Campinas, sigilo, ambiente e como consultar horários.</p>
+      <div class="seo-depth__links">${related}</div>
+    </div>
+  </section>`;
+
+  return html.replace("</article>", `${section}</article>`);
+}
+
+function getRelatedServiceLinks(route: string) {
+  const lower = route.toLowerCase();
+  const links: string[][] = [];
+  if (lower.includes("nuru")) links.push(["/massagem-nuru-campinas/", "Massagem Nuru em Campinas"]);
+  if (lower.includes("lingam") || lower.includes("prostatica") || lower.includes("performance")) links.push(["/massagem-lingam-campinas/", "Massagem Lingam em Campinas"]);
+  if (lower.includes("sensual") || lower.includes("casais") || lower.includes("erotica")) links.push(["/massagem-sensual-campinas/", "Massagem Sensual em Campinas"]);
+  if (lower.includes("tantra") || lower.includes("tantrica") || lower.includes("yoga")) links.push(["/massagem-tantrica-campinas/", "Massagem Tântrica em Campinas"]);
+  links.push(["/servicos/", "Comparar todos os serviços"]);
+  return links.map(([href, label]) => `<a href="${href}">${label}</a>`).join("");
+}
+
+function injectFaqSection(html: string, faq: { question: string; answer: string }[]) {
+  if (html.includes("data-seo-faq-section")) return html;
+
+  const section = `<section class="seo-faq" data-seo-faq-section>
+    <div class="seo-faq__inner">
+      <h2>Dúvidas antes de chamar no WhatsApp</h2>
+      ${faq.map((item) => `<details><summary>${escapeHtml(item.question)}</summary><p>${escapeHtml(item.answer)}</p></details>`).join("")}
+    </div>
+  </section>`;
+
+  if (html.includes("</main>")) {
+    return html.replace("</main>", `${section}</main>`);
+  }
+
+  return html.replace("</footer>", `${section}</footer>`);
+}
+
+function injectConversionSection(html: string, route: string, serviceName?: string) {
+  return html;
+}
+
+function injectMobileWhatsappBar(html: string, route: string, serviceName?: string) {
+  if (html.includes("data-seo-mobile-whatsapp")) return html;
+
+  const whatsappText = commercialPages[route]?.whatsappText ?? getDefaultWhatsappText(route);
+  const href = `https://wa.me/5519983732331?text=${encodeURIComponent(whatsappText)}&utm_source=site&utm_medium=whatsapp&utm_campaign=mobile_bar`;
+  const label = serviceName ? "Consultar horários" : "Tirar dúvidas";
+  const context = serviceName ?? "Atendimento privativo";
+  const bar = `<div class="seo-mobile-whatsapp" data-seo-mobile-whatsapp>
+    <div class="seo-mobile-whatsapp__copy"><strong>${escapeHtml(label)}</strong><span>${escapeHtml(context)} no Cambuí</span></div>
+    <a class="seo-mobile-whatsapp__button" href="${href}" target="_blank" rel="noopener noreferrer" data-cta="whatsapp" data-gtm-event="click_whatsapp" data-gtm-category="conversion" data-gtm-label="mobile_bar">WhatsApp</a>
+  </div>`;
+
+  return html.replace("</body>", `${bar}</body>`);
+}
+
+function injectJsonLd(html: string, data: unknown) {
+  const serialized = JSON.stringify(data);
+  if (html.includes(serialized.slice(0, 80))) return html;
+  return html.replace("</head>", `<script type="application/ld+json">${serialized}</script></head>`);
+}
+
+function buildServiceSchema(route: string, config: (typeof commercialPages)[string]) {
+  const url = `https://karolmassagista.com.br${route}`;
+  return {
+    "@context": "https://schema.org",
+    "@type": "Service",
+    "@id": `${url}#service`,
+    name: config.serviceName,
+    serviceType: config.serviceName,
+    provider: {
+      "@type": "HealthAndBeautyBusiness",
+      "@id": "https://karolmassagista.com.br/#business",
+      name: "Karol Massagista",
+      telephone: "+55 19 98373-2331",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Campinas",
+        addressRegion: "SP",
+        addressCountry: "BR",
+      },
+    },
+    areaServed: [
+      { "@type": "City", name: "Campinas" },
+      { "@type": "Place", name: "Cambui" },
+    ],
+    url,
+  };
+}
+
+function buildFaqSchema(faq: { question: string; answer: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faq.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
+  };
+}
+
+function buildBreadcrumbSchema(route: string) {
+  const parts = route.split("/").filter(Boolean);
+  const itemListElement = [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Inicio",
+      item: "https://karolmassagista.com.br/",
+    },
+  ];
+
+  if (parts.length > 0) {
+    itemListElement.push({
+      "@type": "ListItem",
+      position: 2,
+      name: titleFromSlug(parts.at(-1) ?? ""),
+      item: `https://karolmassagista.com.br${route}`,
+    });
+  }
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement,
+  };
+}
+
+function buildLocalLandingSchema(route: string, config: (typeof localLandingPages)[string]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `https://karolmassagista.com.br${route}#webpage`,
+    name: config.title,
+    description: config.description,
+    url: `https://karolmassagista.com.br${route}`,
+    about: {
+      "@type": "HealthAndBeautyBusiness",
+      "@id": "https://karolmassagista.com.br/#business",
+      name: "Karol Massagista",
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Campinas",
+        addressRegion: "SP",
+        addressCountry: "BR",
+      },
+    },
+    inLanguage: "pt-BR",
+  };
+}
+
+function buildArticleSchema(html: string, route: string) {
+  const title = getMetaValue(html, /<title>(.*?)<\/title>/i);
+  const description = getMetaValue(html, /<meta name="description" content="([^"]*)"/i);
+  const canonical = getMetaValue(html, /<link rel="canonical" href="([^"]*)"/i) || `https://karolmassagista.com.br${route}`;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: stripHtml(title),
+    description: stripHtml(description),
+    mainEntityOfPage: canonical,
+    author: {
+      "@type": "Person",
+      name: "Karol Massagista",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Karol Massagista",
+      url: "https://karolmassagista.com.br/",
+    },
+    inLanguage: "pt-BR",
+  };
+}
+
+function getMetaValue(html: string, pattern: RegExp) {
+  return pattern.exec(html)?.[1] ?? "";
+}
+
+function stripHtml(value: string) {
+  return value.replace(/<[^>]*>/g, "").trim();
+}
+
+function titleFromSlug(slug: string) {
+  return slug
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function enhanceHomePage(html: string) {
+  let output = html
+    .replace(
+      /<h1 id="home-hero-title">[\s\S]*?<\/h1>/,
+      '<h1 id="home-hero-title">Procurando uma massagem tântrica em <span>Campinas?</span></h1>'
+    )
+    .replace(
+      /<p class="home-hero__lead">[\s\S]*?<\/p>/,
+      '<p class="home-hero__lead">Atendimento privativo no Cambuí, em Campinas, com fácil acesso para quem vem de Valinhos, Sumaré e Hortolândia. Conheça as opções e consulte horários pelo WhatsApp.</p>'
+    )
+    .replace('/imagens/sobre-mim/karol-camisa-brasil-sobre.webp', '/imagens/sobre-mim/karol-foto-sobre-outubro.webp')
+    .replace(
+      'alt="Karol em um ambiente privativo em Campinas"',
+      'alt="Karol em uma poltrona durante uma viagem, foto da seção sobre a massagista em Campinas"'
+    )
+    .replace(
+      '>FALAR COM A KAROL</a>',
+      '><svg viewBox="0 0 24 24" class="h-5 w-5 fill-current" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.83 9.83 0 0 1 6.988 2.898 9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884M12.05 0C5.411 0 .01 5.403.007 12.04c0 2.123.553 4.197 1.602 6.034L0 24l6.117-1.605a11.845 11.845 0 0 0 5.925 1.587h.005c6.637 0 12.038-5.403 12.041-12.04a11.781 11.781 0 0 0-3.517-8.482A11.815 11.815 0 0 0 12.05 0"/></svg><span>Falar com a Karol</span></a>'
+    );
+
+  output = output.replace(
+    /<svg\b[^>]*class="[^"]*lucide-message-square[^"]*"[^>]*>[\s\S]*?<\/svg>(?=<svg viewBox="0 0 24 24" class="h-5 w-5 fill-current")/,
+    ""
+  );
+
+  const galleryPattern = /<section id="galeria"[\s\S]*?<\/section>/;
+  const gallery = `<section id="galeria" class="py-24 bg-cream-100 relative overflow-hidden"><div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"><header class="text-center mb-16"><span class="text-brand font-bold tracking-widest uppercase text-xs mb-3 block">Galeria profissional</span><h2 class="font-montserrat font-black text-4xl md:text-5xl text-stone-900 mb-6 tracking-tight">Conheça um pouco mais da Karol</h2><p class="font-poppins text-stone-500 text-base max-w-2xl mx-auto">Confira alguns registros compartilhados pela Karol. O atendimento acontece em ambiente privativo no Cambuí, em Campinas.</p><div class="w-16 h-[2px] bg-brand/30 mx-auto rounded-full mt-6"></div></header><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 md:gap-7">${[
+    ["karol-galeria-01.webp", "Karol em uma poltrona junto à janela durante uma viagem"],
+    ["karol-galeria-02.webp", "Karol sentada junto à janela com vista para a paisagem"],
+    ["karol-galeria-03.webp", "Retrato de Karol em uma poltrona vermelha"],
+    ["karol-galeria-04.webp", "Karol em roupa esportiva vermelha na academia"],
+  ].map(([file, alt]) => `<figure class="aspect-[3/4] rounded-[2rem] overflow-hidden shadow-soft border-4 border-white group"><img src="/imagens/galeria/${file}" alt="${alt}" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" decoding="async" width="1000" height="1400"></figure>`).join("")}</div><div class="text-center mt-12"><a href="/galeria/" class="inline-flex items-center gap-3 bg-white text-stone-900 font-montserrat font-bold py-4 px-8 rounded-full shadow-soft border border-stone-100 hover:bg-brand hover:text-white transition-colors">Ver galeria completa<span aria-hidden="true">→</span></a></div></div></section>`;
+  output = output.replace(galleryPattern, gallery);
+
+  const servicesPattern = /<section id="servicos"[\s\S]*?<\/section>/;
+  const servicesMatch = output.match(servicesPattern);
+  if (servicesMatch) {
+    output = output.replace(servicesPattern, "");
+    output = output.replace(galleryPattern, `${servicesMatch[0]} ${gallery}`);
+  }
+
+  const reviewSectionPattern = /<section id="depoimentos"[\s\S]*?<\/section>/;
+  const reviewSection = `<section id="depoimentos" class="py-24 bg-[#edf5f3] relative"><div class="max-w-6xl mx-auto px-5 sm:px-6 lg:px-8"><header class="text-center mb-12"><span class="text-brand font-bold tracking-widest uppercase text-xs mb-3 block">Prova social</span><h2 class="font-montserrat font-black text-3xl md:text-5xl text-stone-900 tracking-tight">Opiniões de clientes no Google</h2></header><div class="max-w-4xl mx-auto rounded-3xl bg-white border border-stone-200 shadow-sm p-6 md:p-9 flex flex-col md:flex-row items-center justify-between gap-6"><div class="flex items-center gap-5"><span class="grid place-items-center w-14 h-14 rounded-full border border-stone-200 text-3xl font-bold" aria-hidden="true"><span style="background:conic-gradient(from -45deg,#4285f4 0 25%,#34a853 25% 50%,#fbbc05 50% 75%,#ea4335 75%);color:transparent;background-clip:text">G</span></span><div><h3 class="font-montserrat font-bold text-lg text-stone-900">Karol Massagista</h3><a class="text-sm text-stone-600 underline underline-offset-4 hover:text-brand" href="https://share.google/6Wjq6Qx3XE8okqrHv" target="_blank" rel="noopener noreferrer">Ver perfil e opiniões no Google</a></div></div><div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto"><a class="inline-flex justify-center items-center rounded-full bg-white border border-stone-300 px-6 py-3 font-semibold text-stone-800 hover:bg-stone-50" href="https://share.google/6Wjq6Qx3XE8okqrHv" target="_blank" rel="noopener noreferrer">Ver perfil no Google</a><a class="inline-flex justify-center items-center rounded-full bg-brand px-6 py-3 font-semibold text-white hover:bg-brand-dark" href="https://g.page/r/CXaXmEp3QyR6EBM/review" target="_blank" rel="noopener noreferrer">Avaliar no Google</a></div></div><p class="mt-6 text-center text-sm text-stone-500">Leia as avaliações diretamente no Google e, se já conhece o atendimento, compartilhe sua experiência.</p></div></section>`;
+  const reviewCards = `<div class="grid grid-cols-1 md:grid-cols-3 gap-5 mt-8"><article class="rounded-2xl bg-white border border-stone-200 p-6 shadow-sm"><div class="text-amber-500 tracking-[.18em]" aria-label="5 de 5 estrelas">★★★★★</div><blockquote class="mt-4 text-stone-700 leading-relaxed">“Ambiente seguro e muito bem localizado, tudo organizado e acolhedor.”</blockquote><p class="mt-5 text-xs font-semibold uppercase tracking-wider text-stone-500">Avaliação pública no Google</p></article><article class="rounded-2xl bg-white border border-stone-200 p-6 shadow-sm"><div class="text-amber-500 tracking-[.18em]" aria-label="5 de 5 estrelas">★★★★★</div><blockquote class="mt-4 text-stone-700 leading-relaxed">“Uma forma de renovar nosso relacionamento... Ele elogiou bastante o atendimento da Karol.”</blockquote><p class="mt-5 text-xs font-semibold uppercase tracking-wider text-stone-500">Avaliação pública no Google</p></article><article class="rounded-2xl bg-white border border-stone-200 p-6 shadow-sm"><div class="text-amber-500 tracking-[.18em]" aria-label="5 de 5 estrelas">★★★★★</div><blockquote class="mt-4 text-stone-700 leading-relaxed">“A massagem foi sensacional, a melhor que eu já fiz.”</blockquote><p class="mt-5 text-xs font-semibold uppercase tracking-wider text-stone-500">Avaliação pública no Google</p></article></div>`;
+  const reviewSectionWithCards = reviewSection
+    .replace('</a></div></div><div class="flex flex-col sm:flex-row', '</a><p class="mt-2 font-semibold text-amber-600"><span aria-hidden="true">★★★★★</span> 5,0 <span class="text-stone-500 font-normal">· 16 avaliações</span></p></div></div><div class="flex flex-col sm:flex-row')
+    .replace('</div><p class="mt-6 text-center text-sm text-stone-500">', `</div>${reviewCards}<p class="mt-6 text-center text-sm text-stone-500">`);
+  output = output.replace(reviewSectionPattern, reviewSectionWithCards);
+
+  return output;
+}
+
+let html = enhanceLegacyHtml(sourceHtml, routePath);
+if (routePath === "/") html = enhanceHomePage(html);
+html = refinePresentation(html, routePath);
+html = applyTechnicalSeo(html, routePath);
+html = refineEditorialPresentation(html, routePath);
+---
+
+<Fragment set:html={html} />

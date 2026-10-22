@@ -1,0 +1,5 @@
+export const additionalServices = [
+  { letter: "4", name: "Massagem Quatro Mãos", description: "Uma sessão conduzida por duas profissionais, com movimentos coordenados e atenção ao seu conforto. Consulte a disponibilidade pelo WhatsApp.", href: "/massagem-4-maos-campinas/", image: "/imagens/meu-espaco/ambiente-sala.webp", width: 1200, height: 1000, alt: "Sala preparada para uma sessão de massagem quatro mãos" },
+  { letter: "V", name: "Vivência Mútua", description: "Uma experiência de conexão e troca, com a proposta e os limites combinados antes da sessão, em um ambiente reservado.", href: "/servicos/#vivencia-mutua", image: "/imagens/meu-espaco/ambiente-maca.webp", width: 1200, height: 1120, alt: "Ambiente acolhedor para a vivência mútua" },
+  { letter: "N+", name: "Nuru Mix", description: "Uma experiência que combina a massagem Nuru com outras modalidades do atendimento. Converse com a Karol para conhecer a proposta e agendar.", href: "/servicos/#nuru-mix", image: "/imagens/meu-espaco/ambiente-sala.webp", width: 1200, height: 1000, alt: "Espaço privativo para a experiência Nuru Mix" },
+];

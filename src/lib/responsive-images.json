@@ -1,0 +1,311 @@
+{
+  "images": {
+    "/imagens/galeria/karol-galeria-01.webp": {
+      "width": 1000,
+      "height": 1250,
+      "bytes": 148432,
+      "variants": [
+        {
+          "src": "/imagens/galeria/karol-galeria-01-w480-v1.webp",
+          "width": 480,
+          "height": 600,
+          "bytes": 39122
+        },
+        {
+          "src": "/imagens/galeria/karol-galeria-01-w800-v1.webp",
+          "width": 800,
+          "height": 1000,
+          "bytes": 83668
+        }
+      ]
+    },
+    "/imagens/galeria/karol-galeria-02.webp": {
+      "width": 1000,
+      "height": 1250,
+      "bytes": 164828,
+      "variants": [
+        {
+          "src": "/imagens/galeria/karol-galeria-02-w480-v1.webp",
+          "width": 480,
+          "height": 600,
+          "bytes": 44528
+        },
+        {
+          "src": "/imagens/galeria/karol-galeria-02-w800-v1.webp",
+          "width": 800,
+          "height": 1000,
+          "bytes": 94924
+        }
+      ]
+    },
+    "/imagens/galeria/karol-galeria-03.webp": {
+      "width": 1000,
+      "height": 1250,
+      "bytes": 212638,
+      "variants": [
+        {
+          "src": "/imagens/galeria/karol-galeria-03-w480-v1.webp",
+          "width": 480,
+          "height": 600,
+          "bytes": 69990
+        },
+        {
+          "src": "/imagens/galeria/karol-galeria-03-w800-v1.webp",
+          "width": 800,
+          "height": 1000,
+          "bytes": 132952
+        }
+      ]
+    },
+    "/imagens/galeria/karol-galeria-04.webp": {
+      "width": 941,
+      "height": 1672,
+      "bytes": 112998,
+      "variants": [
+        {
+          "src": "/imagens/galeria/karol-galeria-04-w480-v1.webp",
+          "width": 480,
+          "height": 853,
+          "bytes": 43608
+        },
+        {
+          "src": "/imagens/galeria/karol-galeria-04-w800-v1.webp",
+          "width": 800,
+          "height": 1421,
+          "bytes": 77940
+        }
+      ]
+    },
+    "/imagens/galeria/karol-galeria-05.webp": {
+      "width": 1000,
+      "height": 1250,
+      "bytes": 88494,
+      "variants": [
+        {
+          "src": "/imagens/galeria/karol-galeria-05-w480-v1.webp",
+          "width": 480,
+          "height": 600,
+          "bytes": 26826
+        },
+        {
+          "src": "/imagens/galeria/karol-galeria-05-w800-v1.webp",
+          "width": 800,
+          "height": 1000,
+          "bytes": 52174
+        }
+      ]
+    },
+    "/imagens/galeria/karol-galeria-06.webp": {
+      "width": 1000,
+      "height": 1250,
+      "bytes": 120380,
+      "variants": [
+        {
+          "src": "/imagens/galeria/karol-galeria-06-w480-v1.webp",
+          "width": 480,
+          "height": 600,
+          "bytes": 36762
+        },
+        {
+          "src": "/imagens/galeria/karol-galeria-06-w800-v1.webp",
+          "width": 800,
+          "height": 1000,
+          "bytes": 72396
+        }
+      ]
+    },
+    "/imagens/galeria/karol-galeria-07.webp": {
+      "width": 1000,
+      "height": 1250,
+      "bytes": 87144,
+      "variants": [
+        {
+          "src": "/imagens/galeria/karol-galeria-07-w480-v1.webp",
+          "width": 480,
+          "height": 600,
+          "bytes": 24026
+        },
+        {
+          "src": "/imagens/galeria/karol-galeria-07-w800-v1.webp",
+          "width": 800,
+          "height": 1000,
+          "bytes": 48024
+        }
+      ]
+    },
+    "/imagens/galeria/karol-galeria-08.webp": {
+      "width": 1000,
+      "height": 1250,
+      "bytes": 106016,
+      "variants": [
+        {
+          "src": "/imagens/galeria/karol-galeria-08-w480-v1.webp",
+          "width": 480,
+          "height": 600,
+          "bytes": 31258
+        },
+        {
+          "src": "/imagens/galeria/karol-galeria-08-w800-v1.webp",
+          "width": 800,
+          "height": 1000,
+          "bytes": 62490
+        }
+      ]
+    },
+    "/imagens/galeria/karol-galeria-09.webp": {
+      "width": 1000,
+      "height": 1250,
+      "bytes": 138842,
+      "variants": [
+        {
+          "src": "/imagens/galeria/karol-galeria-09-w480-v1.webp",
+          "width": 480,
+          "height": 600,
+          "bytes": 38712
+        },
+        {
+          "src": "/imagens/galeria/karol-galeria-09-w800-v1.webp",
+          "width": 800,
+          "height": 1000,
+          "bytes": 81802
+        }
+      ]
+    },
+    "/imagens/galeria/karol-galeria-massagem-spa.webp": {
+      "width": 850,
+      "height": 769,
+      "bytes": 63206,
+      "variants": [
+        {
+          "src": "/imagens/galeria/karol-galeria-massagem-spa-w480-v1.webp",
+          "width": 480,
+          "height": 434,
+          "bytes": 26438
+        },
+        {
+          "src": "/imagens/galeria/karol-galeria-massagem-spa-w800-v1.webp",
+          "width": 800,
+          "height": 724,
+          "bytes": 47638
+        }
+      ]
+    },
+    "/imagens/meu-espaco/ambiente-recepcao.webp": {
+      "width": 1086,
+      "height": 1448,
+      "bytes": 208804,
+      "variants": [
+        {
+          "src": "/imagens/meu-espaco/ambiente-recepcao-w480-v1.webp",
+          "width": 480,
+          "height": 640,
+          "bytes": 54356
+        },
+        {
+          "src": "/imagens/meu-espaco/ambiente-recepcao-w800-v1.webp",
+          "width": 800,
+          "height": 1067,
+          "bytes": 117690
+        }
+      ]
+    },
+    "/imagens/meu-espaco/ambiente-sala.webp": {
+      "width": 1200,
+      "height": 1000,
+      "bytes": 116594,
+      "variants": [
+        {
+          "src": "/imagens/meu-espaco/ambiente-sala-w480-v1.webp",
+          "width": 480,
+          "height": 400,
+          "bytes": 27620
+        },
+        {
+          "src": "/imagens/meu-espaco/ambiente-sala-w800-v1.webp",
+          "width": 800,
+          "height": 667,
+          "bytes": 59554
+        }
+      ]
+    },
+    "/imagens/meu-espaco/ambiente-maca.webp": {
+      "width": 1200,
+      "height": 1120,
+      "bytes": 158946,
+      "variants": [
+        {
+          "src": "/imagens/meu-espaco/ambiente-maca-w480-v1.webp",
+          "width": 480,
+          "height": 448,
+          "bytes": 34786
+        },
+        {
+          "src": "/imagens/meu-espaco/ambiente-maca-w800-v1.webp",
+          "width": 800,
+          "height": 747,
+          "bytes": 78328
+        }
+      ]
+    },
+    "/imagens/sobre-mim/karol-foto-sobre-outubro.webp": {
+      "width": 1000,
+      "height": 1250,
+      "bytes": 183344,
+      "variants": [
+        {
+          "src": "/imagens/sobre-mim/karol-foto-sobre-outubro-w480-v1.webp",
+          "width": 480,
+          "height": 600,
+          "bytes": 47646
+        },
+        {
+          "src": "/imagens/sobre-mim/karol-foto-sobre-outubro-w800-v1.webp",
+          "width": 800,
+          "height": 1000,
+          "bytes": 103168
+        }
+      ]
+    },
+    "/imagens/galeria/karol-galeria-10.webp": {
+      "width": 700,
+      "height": 1280,
+      "bytes": 50050,
+      "variants": [
+        {
+          "src": "/imagens/galeria/karol-galeria-10-w480-v1.webp",
+          "width": 480,
+          "height": 878,
+          "bytes": 28446
+        }
+      ]
+    },
+    "/imagens/galeria/karol-galeria-11.webp": {
+      "width": 711,
+      "height": 1179,
+      "bytes": 38872,
+      "variants": [
+        {
+          "src": "/imagens/galeria/karol-galeria-11-w480-v1.webp",
+          "width": 480,
+          "height": 796,
+          "bytes": 20936
+        }
+      ]
+    }
+  },
+  "logo": {
+    "bytes": 79216,
+    "variants": [
+      {
+        "src": "/imagens/hero/karol-logo-w96-v1.webp",
+        "width": 96,
+        "bytes": 8454
+      },
+      {
+        "src": "/imagens/hero/karol-logo-w192-v1.webp",
+        "width": 192,
+        "bytes": 26602
+      }
+    ]
+  }
+}
